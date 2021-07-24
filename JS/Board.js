@@ -1,34 +1,35 @@
 class Board {
-    communicationType   //type of communication taking place
-    deviceID //ID of device transmitting the information
-    bData //byte inforamation to be transmitted
-    fData //float information to be transmitted
-    type // type of communication taking place
-    expected //number for floating point numbers that are expected
+    communicationType;  //type of communication taking place
+    deviceID; //ID of device transmitting the information
+    bData; //byte inforamation to be transmitted
+    fData; //float information to be transmitted
+    type; // type of communication taking place
+    expected; //number for floating point numbers that are expected
+    port;
 
     constructor(portName, baud){
-        serial = new p5.SerialPort();  
+        this.port = new p5.SerialPort();  
         let options = { baudrate: baud};
-        serial.open(portName, options);              // open a serial port
-        port.clear();
-        reset_board();
+        this.port.open(portName, options);              // open a serial port
+        this.port.clear();
+        this.reset_board();
     }
 
     transmit(communicationType, deviceID, bData, fData){
-        let outData = new Uint8Array[2 + bData.length + 4*fData.length];
-		let segments = new Uint8Array[4];
+        let outData = new Uint8Array(2 + bData.length + 4*fData.length);
+		let segments = new Uint8Array(4);
 		
 		outData[0] = communicationType;
 		outData[1] = deviceID;
 		
 		this.deviceID = deviceID;
 		
-		System.arraycopy(bData, 0, outData, 2, bData.length);
+		this.arraycopy(bData, 0, outData, 2, bData.length);
 		
 		let j = 2 + bData.length;
 		for(let i = 0; i < fData.length; i++){
 			segments = FloatToBytes(fData[i]);
-			System.arraycopy(segments, 0, outData, j, 4);
+			this.arraycopy(segments, 0, outData, j, 4);
 			j = j + 4;
 		}
 		
@@ -70,20 +71,20 @@ class Board {
         return available;
     }
 
-    #reset_board = function(){
-		communicationType = 0;
-		deviceID = 0;
-		bData = new Uint8Array[0];
-		fData = new Float32Array [0];
+    reset_board() {
+		this.communicationType = 0;
+		this.deviceID = 0;
+		this.bData = new Uint8Array(0);
+		this.fData = new Float32Array (0);
 		
-		transmit(communicationType, deviceID, bData, fData);
+		this.transmit(this.communicationType, this.deviceID, this.bData, this.fData);
 	}
 
-    #set_buffer = function(length){
+    set_buffer(length){
 		this.port.buffer(length);
 	}
 
-    #FloatToBytes = function(val){
+    FloatToBytes(val){
   
 		segments = new Uint8Array[4];
   
@@ -98,7 +99,7 @@ class Board {
   
 	}
 
-    #BytesToFloat = function(segment){
+    BytesToFloat(segment){
   
 		let temp = 0;
   
@@ -111,5 +112,9 @@ class Board {
   
 		return val;
 	}	
+  
+    arraycopy(src, srcPos, dst, dstPos, length) {
+    while (length--) dst[dstPos++] = src[srcPos++]; return dst;
+}
     
 }
