@@ -14,7 +14,11 @@
 
 
 class Mechanisms{
-		
+  constructor() {
+    if (this.constructor === Mechanisms) {
+        throw new TypeError('Abstract class "Mechanisms" cannot be instantiated directly.'); 
+    }
+  }
 
 	forwardKinematics(angles);
 	
