@@ -1,26 +1,26 @@
 class Device{
 
-    #deviceLink;
+    deviceLink;
 
-	#deviceID;
-	#mechanism;
+	deviceID;
+	mechanism;
 	
-	#communicationType;
+	communicationType;
 	
-	#actuatorsActive    = 0;
-	#motors             = new Actuator[0];
+	actuatorsActive    = 0;
+	motors             = new Actuator[0];
 	
-	#encodersActive     = 0;
-	#encoders           = new Sensor[0];
+	encodersActive     = 0;
+	encoders           = new Sensor[0];
 	
-	#sensorsActive      = 0;
-	#sensors            = new Sensor[0];
+	sensorsActive      = 0;
+	sensors            = new Sensor[0];
 	
-	#pwmsActive		     = 0;
-    #pwms 			         = new Pwm[0];
+	pwmsActive		     = 0;
+    pwms 			         = new Pwm[0];
     
-    #actuatorPositions  = [0, 0, 0, 0];
-    #encoderPositions   = [0, 0, 0, 0];
+    actuatorPositions  = [0, 0, 0, 0];
+    encoderPositions   = [0, 0, 0, 0];
     
     constructor(deviceID, deviceLink){
         this.deviceID = deviceID;
@@ -52,15 +52,15 @@ class Device{
                 }
             }
     
-        }
+        
             
             if(!error){
                 let temp = new Actuator[actuatorsActive + 1];
     
-                System.arraycopy(motors, 0, temp, 0, motors.length);
+                arraycopy(motors, 0, temp, 0, motors.length);
                 
                 if(j < actuatorsActive){
-                    System.arraycopy(motors, j, temp, j+1, motors.length - j);
+                    arraycopy(motors, j, temp, j+1, motors.length - j);
                 }
                 
                 temp[j] = new Actuator(actuator, rotation, port);
@@ -69,8 +69,8 @@ class Device{
                 motors = temp;
                 actuatorsActive++;
             }
-    
-            Device.prototype.add_encoder (encoder, rotation, offset, resolution, port){
+        }
+            add_encoder(encoder, rotation, offset, resolution, port){
                 let error = false;
             
                 if(port < 1 || port > 4){
@@ -111,8 +111,9 @@ class Device{
                     encoders = temp;
                     encodersActive++;
                 }
+            }
     
-                Device.prototype.add_analog_sensor  (pin){
+                add_analog_sensor(pin) {
                     // set sensor to be size zero
                     let error = false;
                     
@@ -173,7 +174,6 @@ class Device{
                     }
                      
                 }
-            }
     
     set_mechanism (mechanism){
         this.mechanism = mechanism;
@@ -456,7 +456,7 @@ class Device{
         return endEffectorPosition;
     }
     
-    Device.prototype.set_device_torques (forces){
+    set_device_torques (forces){
         this.mechanism.torqueCalculation(forces);
         var torques = this.mechanism.get_torque();
         
@@ -465,6 +465,10 @@ class Device{
         }
         
         return torques;
+    }
+
+    arraycopy(src, srcPos, dst, dstPos, length) {
+        while (length--) dst[dstPos++] = src[srcPos++]; return dst;
     }
 	
 }
