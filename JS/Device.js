@@ -8,16 +8,16 @@ class Device{
 	communicationType;
 	
 	actuatorsActive    = 0;
-	motors             = new Actuator[0];
+	motors             = new Actuator();
 	
 	encodersActive     = 0;
-	encoders           = new Sensor[0];
+	encoders           = new Sensor();
 	
 	sensorsActive      = 0;
-	sensors            = new Sensor[0];
+	sensors            = new Sensor();
 	
-	pwmsActive		     = 0;
-    pwms 			         = new Pwm[0];
+	pwmsActive = 0;
+    pwms = new Pwm();
     
     actuatorPositions  = [0, 0, 0, 0];
     encoderPositions   = [0, 0, 0, 0];
@@ -41,12 +41,12 @@ class Device{
             }
             
             let j = 0;
-            for(let i = 0; i < actuatorsActive; i++){
-                if(motors[i].get_actuator() < actuator){
+            for(let i = 0; i < this.actuatorsActive; i++){
+                if(this.motors[i].get_actuator() < actuator){
                     j++;
                 }
                 
-                if(motors[i].get_actuator() == actuator){
+                if(this.motors[i].get_actuator() == actuator){
                     System.err.println("error: actuator " + actuator + " has already been set");
                     error = true;
                 }
@@ -55,19 +55,19 @@ class Device{
         
             
             if(!error){
-                let temp = new Actuator[actuatorsActive + 1];
+                let temp = new Actuator(this.actuatorsActive + 1);
     
-                arraycopy(motors, 0, temp, 0, motors.length);
+                this.arraycopy(this.motors, 0, temp, 0, this.motors.length);
                 
-                if(j < actuatorsActive){
-                    arraycopy(motors, j, temp, j+1, motors.length - j);
+                if(j < this.actuatorsActive){
+                    this.arraycopy(this.motors, j, temp, j+1, this.motors.length - j);
                 }
                 
                 temp[j] = new Actuator(actuator, rotation, port);
-                actuator_assignment(actuator, port);
+                this.actuator_assignment(actuator, port);
                 
-                motors = temp;
-                actuatorsActive++;
+                this.motors = temp;
+                this.actuatorsActive++;
             }
         }
             add_encoder(encoder, rotation, offset, resolution, port){
@@ -85,31 +85,32 @@ class Device{
                 
                 // determine index for copying
                 let j = 0;
-                for(let i = 0; i < encodersActive; i++){
-                    if(encoders[i].get_encoder() < encoder){
+                for(let i = 0; i < this.encodersActive; i++){
+                    if(this.encoders[i].get_encoder() < encoder){
                         j++;
                     }
                     
-                    if(encoders[i].get_encoder() == encoder){
-                        System.err.println("error: encoder " + encoder + " has already been set");
+                    if(this.encoders[i].get_encoder() == encoder){
+                        // System.err.println("error: encoder " + encoder + " has already been set");
+                      throw new Error("error: encoder " + encoder + " has already been set")
                         error = true;
                     }
                 }
                 
                 if(!error){
-                    let temp = new Sensor[encodersActive + 1];
+                    let temp = new Sensor(this.encodersActive + 1);
                     
-                    System.arraycopy(encoders, 0, temp, 0, encoders.length);
+                    this.arraycopy(this.encoders, 0, temp, 0, this.encoders.length);
               
-                    if(j < encodersActive){
-                        System.arraycopy(encoders, j, temp, j+1, encoders.length - j);
+                    if(j < this.encodersActive){
+                        this.arraycopy(this.encoders, j, temp, j+1, this.encoders.length - j);
                     }
                     
                     temp[j] = new Sensor(encoder, rotation, offset, resolution, port);
-                    encoder_assignment(encoder, port);
+                    this.encoder_assignment(encoder, port);
                     
-                    encoders = temp;
-                    encodersActive++;
+                    this.encoders = temp;
+                    this.encodersActive++;
                 }
             }
     
@@ -181,74 +182,75 @@ class Device{
     
     device_set_parameters (){
             
-        communicationType = 1;
+        this.communicationType = 1;
         
         let control;
         
-        const encoderParameters = new float();
+        var encoderParameters = new float();
     
-        const encoderParams = new Uint8Array;
-        const motorParams = new Uint8Array;
-        const sensorParams = new Uint8Array;
-        const pwmParams = new Uint8Array;
+        var encoderParams = new Uint8Array;
+        var motorParams = new Uint8Array;
+        var sensorParams = new Uint8Array;
+        var pwmParams = new Uint8Array;
         
-        if(encodersActive > 0){	
-      encoderParams = new Uint8Array[encodersActive + 1];
+        if(this.encodersActive > 0){	
+      encoderParams = new Uint8Array(this.encodersActive + 1);
             control = 0;		
     
-            for(let i = 0; i < encoders.length; i++){
-                if(encoders[i].get_encoder() != (i+1)){
-                    System.err.println("warning, improper encoder indexing");
-                    encoders[i].set_encoder(i+1);
-                    encoderPositions[encoders[i].get_port() - 1] = encoders[i].get_encoder();
+            for(let i = 0; i < this.encoders.length; i++){
+                if(this.encoders[i].get_encoder() != (i+1)){
+                    //System.err.println("warning, improper encoder indexing");
+                  console.warn("warning, improper encoder indexing")
+                    this.encoders[i].set_encoder(i+1);
+                    encoderPositions[encoders[i].get_port() - 1] = this.encoders[i].get_encoder();
                 }
             }
             
-            for(let i = 0; i < encoderPositions.length; i++){
+            for(let i = 0; i < this.encoderPositions.length; i++){
                 control = control >> 1;
                 
-                if(encoderPositions[i] > 0){
+                if(this.encoderPositions[i] > 0){
                     control = control | 0x0008;
                 }
             }
             
             encoderParams[0] = control;
         
-            encoderParameters = new float[2*encodersActive];
+            encoderParameters = new Float32Array(2*this.encodersActive);
             
             let j = 0;
-            for(let i = 0; i < encoderPositions.length; i++){
-                if(encoderPositions[i] > 0){
-                    encoderParameters[2*j] = encoders[encoderPositions[i]-1].get_offset(); 
-                    encoderParameters[2*j+1] = encoders[encoderPositions[i]-1].get_resolution();
-                    j++;
-          encoderParams[j] = encoders[encoderPositions[i]-1].get_direction(); 
+            for(let i = 0; i < this.encoderPositions.length; i++){
+                if(this.encoderPositions[i] > 0){
+          //           encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset(); 
+          //           encoderParameters[2*j+1] = this.encoders[this.encoderPositions[i]-1].get_resolution();
+          //           j++;
+          // encoderParams[j] = this.encoders[this.encoderPositions[i]-1].get_direction(); 
                 }
             }
         }
         else{
-      encoderParams = new byte[1];
+      encoderParams = new Uint8Array(1);
       encoderParams[0] = 0;
-            encoderParameters = new float[0];
+            encoderParameters = new Float32Array(0);
         }
         
         
-        if(actuatorsActive > 0){
-      motorParams = new byte[actuatorsActive + 1];
+        if(this.actuatorsActive > 0){
+      motorParams = new Uint8Array(this.actuatorsActive + 1);
             control = 0;
             
-            for(let i = 0; i < motors.length; i++){
-                if(motors[i].get_actuator() != (i+1)){
-                    System.err.println("warning, improper actuator indexing");
+            for(let i = 0; i < this.motors.length; i++){
+                if(this.motors[i].get_actuator() != (i+1)){
+                    // System.err.println("warning, improper actuator indexing");
                     motors[i].set_actuator(i+1);
                     actuatorPositions[motors[i].get_port() - 1] = motors[i].get_actuator();
                 }
             }
             
-            for(let i = 0; i < actuatorPositions.length; i++){
+            for(let i = 0; i < this.actuatorPositions.length; i++){
                 control = control >> 1;
                 
-                if(actuatorPositions[i] > 0){
+                if(this.actuatorPositions[i] > 0){
                     control = control | 0x0008;
                 }
             }
@@ -256,11 +258,11 @@ class Device{
             motorParams[0] = control;
       
       let j = 1;
-      for(let i = 0; i < actuatorPositions.length; i++){
-        if(actuatorPositions[i] > 0){
-          motorParams[j] = motors[actuatorPositions[i]-1].get_direction();
-          j++;
-        }
+      for(let i = 0; i < this.actuatorPositions.length; i++){
+        // if(this.actuatorPositions[i] > 0){
+        //   motorParams[j] = this.motors[this.actuatorPositions[i]-1].get_direction();
+        //   j++;
+        // }
       }
         }
     else{
@@ -269,8 +271,8 @@ class Device{
     }
         
         
-        if(sensorsActive > 0){
-            sensorParams = new Uint8Array[sensorsActive + 1];
+        if(this.sensorsActive > 0){
+            sensorParams = new Uint8Array(this.sensorsActive + 1);
             sensorParams[0] = sensorsActive;
             
             for(let i = 0; i < sensorsActive; i++){
@@ -279,25 +281,25 @@ class Device{
             
             Arrays.sort(sensorParams);
             
-            for(let i = 0; i < sensorsActive; i++){
+            for(let i = 0; i < this.sensorsActive; i++){
                 sensors[i].set_port(sensorParams[i+1]);
             }
             
         }
         else{
-            sensorParams = new byte[1];
+            sensorParams = new Uint8Array(1);
             sensorParams[0] = 0;
         }
     
     
-    if(pwmsActive > 0){
-      let temp = new Uint8Array[pwmsActive];
+    if(this.pwmsActive > 0){
+      let temp = new Uint8Array(this.pwmsActive);
       
-      pwmParams = new byte[pwmsActive + 1];
-      pwmParams[0] = pwmsActive;
+      pwmParams = new Uint8Array(this.pwmsActive + 1);
+      pwmParams[0] = this.pwmsActive;
       
       
-      for(let i = 0; i < pwmsActive; i++){
+      for(let i = 0; i < this.pwmsActive; i++){
         temp[i] = pwms[i].get_pin();
       }
       
@@ -310,22 +312,22 @@ class Device{
       
     }
     else{
-      pwmParams = new byte[1];
+      pwmParams = new Uint8Array(1);
       pwmParams[0] = 0;
     }
             
         
-        const encMtrSenPwm = new Uint8Array[motorParams.length  + encoderParams.length + sensorParams.length + pwmParams.length];
-        System.arraycopy(motorParams, 0, encMtrSenPwm, 0, motorParams.length);
-    System.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
-        System.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
-    System.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
+        const encMtrSenPwm = new Uint8Array(motorParams.length  + encoderParams.length + sensorParams.length + pwmParams.length);
+        this.arraycopy(motorParams, 0, encMtrSenPwm, 0, motorParams.length);
+    this.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
+        this.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
+    this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
         
-        deviceLink.transmit(communicationType, deviceID, encMtrSenPwm, encoderParameters);	
+        this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
     }
 
-    #actuator_assignment(actuator, port){
-		if(actuatorPositions[port - 1] > 0){
+    actuator_assignment(actuator, port){
+		if(this.actuatorPositions[port - 1] > 0){
 			System.err.println("warning, double check actuator port usage");
 		}
 		
@@ -336,10 +338,11 @@ class Device{
  /**
   * assigns encoder positions based on actuator port
   */	
-	#encoder_assignment(encoder, port){
+	encoder_assignment(encoder, port){
 		
-		if(encoderPositions[port - 1] > 0){
-			System.err.println("warning, double check encoder port usage");
+		if(this.encoderPositions[port - 1] > 0){
+			// System.err.println("warning, double check encoder port usage");
+          console.warn('warning, double check encoder port usage'); 
 		}
 		
 		this.encoderPositions[port - 1] = encoder;

@@ -1,8 +1,25 @@
 /**
  * If you're not familiar with TypeScript code, just ignore the `<TYPE>` and `:TYPE` parts.
- */const data = self
+ */
+var data =false;
+self.addEventListener('message', function(e) {
+  var data = e.data;
+  switch (data.cmd) {
+    case 'start':
+      self.postMessage('WORKER STARTED: ' + data.msg);
+      data = true;
+      break;
+    case 'stop':
+      self.postMessage('WORKER STOPPED: ' + data.msg +
+                       '. (buttons will no longer work)');
+      self.close(); // Terminates the worker.
+      break;
+    default:
+      self.postMessage('Unknown command: ' + data.msg);
+  };
+}, false);
 
-   if(data){
+if (data){
         /* GET END-EFFECTOR STATE (TASK SPACE) */
         widgetOne.device_read_data();
       
@@ -91,6 +108,6 @@
   
     renderingForce = false;
 
-
+}
   
   
