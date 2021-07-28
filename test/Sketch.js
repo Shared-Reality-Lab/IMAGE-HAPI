@@ -86,23 +86,23 @@ var ball, leftWall, bottomWall, rightWall;
 
 
 function setup() {
-    createCanvas(400, 400);
-    this.haplyBoard          = new Board(this,'COM6',0);//Serial.list()[0]
-    this.widgetOne           = new Device(this.widgetOneID, this.haplyBoard);
-    this.pantograph          = new Pantograph();
+    createCanvas(800, 800);
+    // this.haplyBoard          = new Board(this,'COM7',0);//Serial.list()[0]
+    // this.widgetOne           = new Device(this.widgetOneID, this.haplyBoard);
+    // this.pantograph          = new Pantograph();
 
-    widgetOne.set_mechanism(pantograph);
+    // widgetOne.set_mechanism(pantograph);
   
-    widgetOne.add_actuator(1, CCW, 2);
-    widgetOne.add_actuator(2, CW, 1);
+    // widgetOne.add_actuator(1, CCW, 2);
+    // widgetOne.add_actuator(2, CW, 1);
     
-    widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-    widgetOne.add_encoder(2, CW, -61, 10752, 1);
+    // widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+    // widgetOne.add_encoder(2, CW, -61, 10752, 1);
     
-    widgetOne.device_set_parameters();
+    // widgetOne.device_set_parameters();
     
     /* visual elements setup */
-    background(0);
+    //background(0);
     deviceOrigin.add(worldPixelWidth/2, 0);
     
     /* create pantagraph graphics */
@@ -127,7 +127,7 @@ function setup() {
     /* setup framerate speed */
     frameRate(baseFrameRate);
     
-    
+    simulationThread();
     // /* setup simulation thread to run at 1kHz */ 
     // var st = new SimulationThread();
     // scheduler.scheduleAtFixedRate(st, 1, 1, MILLISECONDS);
@@ -135,31 +135,67 @@ function setup() {
   
   function draw() {
     /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-    if(renderingForce == false){
-        background(255);  
-        update_animation(angles.x*radsPerDegree, angles.y*radsPerDegree, posEE.x, posEE.y);
-    }
+     if(renderingForce == false){
+       //  background(255);  
+      //   update_animation(angles.x*radsPerDegree, angles.y*radsPerDegree, posEE.x, posEE.y);
+     }
   }
 
-if (window.Worker) {
-    // console.log("here");
+// if (window.Worker) {
+//     // console.log("here");
+//     worker = new Worker("worker.js");
+//     //document.getElementById("button").addEventListener("click", setup);
+// }
+// else {
+//     console.log("oops!");
+// }
+
+function simulationThread(){}
+// function simulationThread()
+// {
+    console.debug("PING from simulation thread");
+    if (window.Worker) {
     worker = new Worker("worker.js");
-    //document.getElementById("button").addEventListener("click", setup);
-}
-else {
-    console.log("oops!");
-}
+    // document.getElementById("button").addEventListener("click",function(e) 
+    // {
+        worker.postMessage("start");
+  //   });
+  document.getElementById("button").addEventListener("click",function(e) 
+    {
+      worker.postMessage('button');
+        });
+    
+  }
+  else {
+      console.log("oops!");
+  }
+  addEventListener("message", function(e) {
+    if(e.data == 'close')
+    worker.terminate();
+  });
+  
+// }
 
-
-function SimulationThread(){
-    var worker;
-    if(haplyBoard.data_available()){
-         worker.postMessage("start");
-    }
-    else{
-         worker.postMessage("stop");
-    }
-}  
+// worker.addEventListener("message", function(e) 
+    // {
+    //     worker.postMessage("ping");
+    // });
+      
+ // worker = new Worker('worker.js');
+ // worker.postMessage("hello");
+  //workers.onmessage = workerDone;
+  //workers.postMessage({
+  //  message_1: 'first message',
+  //  message_2: 'another message'
+  //});
+  //console.log("PING3");
+    // var worker;
+    // if(haplyBoard.data_available()){
+    //      worker.postMessage("start");
+    // }
+    // else{
+    //      worker.postMessage("stop");
+    // } 
 
 
 /* helper functions section, place helper functions here ***************************************************************/
@@ -250,7 +286,7 @@ function update_animation(th1, th2, xE, yE){
     translate(xE, yE);
     endEffector.beginShape();
     endEffector.endShape();
-    // shape(endEffector);
+     shape(endEffector);
   }
   
   
@@ -264,37 +300,36 @@ function graphics_to_device(graphicsFrame){
   }
   /* end helper function ****************************************************************************************/
 
-
 class Device{
-
-    deviceLink;
-
-	deviceID;
-	mechanism;
-	
-	communicationType;
-	
-	actuatorsActive    = 0;
-	motors             = new Actuator();
-	
-	encodersActive     = 0;
-	encoders           = new Sensor();
-	
-	sensorsActive      = 0;
-	sensors            = new Sensor();
-	
-	pwmsActive = 0;
-    pwms = new Pwm();
-    
-    actuatorPositions  = [0, 0, 0, 0];
-    encoderPositions   = [0, 0, 0, 0];
     
     constructor(deviceID, deviceLink){
         this.deviceID = deviceID;
 		this.deviceLink = deviceLink;
+      
+	this.mechanism = null;
+	
+	this.communicationType = 1;
+	
+	//actuatorsActive    = 0;
+	this.motors             = new Actuator();
+	
+	//encodersActive     = 0;
+	this.encoders           = new Sensor();
+	
+	//sensorsActive      = 0;
+	this.sensors            = new Sensor();
+	
+	this.pwmsActive = 0;
+    this.pwms = new Pwm();
+      
+    
+    this.actuatorPositions  = [0, 0, 0, 0];
+    this.encoderPositions   = [0, 0, 0, 0];      
 
     }
+
     add_actuator(actuator, rotation, port){
+      
         let error = false;
         
             if(port < 1 || port > 4){
@@ -341,12 +376,12 @@ class Device{
                 let error = false;
             
                 if(port < 1 || port > 4){
-                    System.err.println("error: encoder port index out of bounds");
+                    console.log("error: encoder port index out of bounds");
                     error = true;
                 }
                 
                 if(encoder < 1 || encoder > 4){
-                    System.err.println("error: encoder index out of bound!");
+                    console.log("error: encoder index out of bound!");
                     error = true;
                 }
                 
@@ -418,18 +453,18 @@ class Device{
                     
                     for(let i = 0; i < pwmsActive; i++){
                         if(pin == pwms[i].get_pin()){
-                            System.err.println("error: pwm pin: " + pin + " has already been set");
+                            console.log("error: pwm pin: " + pin + " has already been set");
                             error = true;
                         }
                     }
                     
                     if(pin < 0 || pin > 13){
-                            System.err.println("error: outside pwn pin range");
+                            console.log("error: outside pwn pin range");
                             error = true;
                     }
             
                 if(pin == 0 || pin == 1){
-                    System.out.println("warning: 0 and 1 are not pwm pins on Haply M3 or Haply original");
+                    console.log("warning: 0 and 1 are not pwm pins on Haply M3 or Haply original");
                 }
                     
                     
@@ -448,17 +483,17 @@ class Device{
     }
     
     device_set_parameters (){
-            
+      
         this.communicationType = 1;
         
         let control;
         
         var encoderParameters = new float();
     
-        var encoderParams = new Uint8Array;
-        var motorParams = new Uint8Array;
-        var sensorParams = new Uint8Array;
-        var pwmParams = new Uint8Array;
+        var encoderParams = new Uint8Array();
+        var motorParams = new Uint8Array();
+        var sensorParams = new Uint8Array();
+        var pwmParams = new Uint8Array();
         
         if(this.encodersActive > 0){	
       encoderParams = new Uint8Array(this.encodersActive + 1);
@@ -483,15 +518,15 @@ class Device{
             
             encoderParams[0] = control;
         
-            encoderParameters = new Float32Array(2*this.encodersActive);
+            encoderParameters = new float(2*this.encodersActive);
             
             let j = 0;
             for(let i = 0; i < this.encoderPositions.length; i++){
                 if(this.encoderPositions[i] > 0){
-          //           encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset(); 
-          //           encoderParameters[2*j+1] = this.encoders[this.encoderPositions[i]-1].get_resolution();
-          //           j++;
-          // encoderParams[j] = this.encoders[this.encoderPositions[i]-1].get_direction(); 
+                    encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset();
+                    encoderParameters[2*j+1] = this.encoders[this.encoderPositions[i]-1].get_resolution();
+                    j++;
+          encoderParams[j] = this.encoders[this.encoderPositions[i]-1].get_direction(); 
                 }
             }
         }
@@ -526,14 +561,14 @@ class Device{
       
       let j = 1;
       for(let i = 0; i < this.actuatorPositions.length; i++){
-        // if(this.actuatorPositions[i] > 0){
-        //   motorParams[j] = this.motors[this.actuatorPositions[i]-1].get_direction();
-        //   j++;
-        // }
+        if(this.actuatorPositions[i] > 0){
+          motorParams[j] = this.motors[this.actuatorPositions[i]-1].get_direction();
+          j++;
+        }
       }
         }
     else{
-      const motorParams = new Uint8Array[1];
+      const motorParams = new Uint8Array(1);
       motorParams[0] = 0;
     }
         
@@ -817,7 +852,7 @@ class Pantograph extends Mechanisms{
         super();
         this.l = 0.07;
         this.L = 0.09;
-        this. d = 0.0;
+        this.d = 0.0;
     }
 
     torqueCalculation(force){
