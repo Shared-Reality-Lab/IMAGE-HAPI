@@ -87,19 +87,20 @@ var ball, leftWall, bottomWall, rightWall;
 
 function setup() {
     createCanvas(800, 800);
-    // this.haplyBoard          = new Board(this,'COM7',0);//Serial.list()[0]
-    // this.widgetOne           = new Device(this.widgetOneID, this.haplyBoard);
-    // this.pantograph          = new Pantograph();
 
-    // widgetOne.set_mechanism(pantograph);
+    this.haplyBoard          = new Board(this,'COM7',0);//Serial.list()[0]
+    this.widgetOne           = new Device(this.widgetOneID, this.haplyBoard);
+    this.pantograph          = new Pantograph();
+
+    widgetOne.set_mechanism(pantograph);
   
-    // widgetOne.add_actuator(1, CCW, 2);
-    // widgetOne.add_actuator(2, CW, 1);
+    widgetOne.add_actuator(1, CCW, 2);
+    widgetOne.add_actuator(2, CW, 1);
     
-    // widgetOne.add_encoder(1, CCW, 241, 10752, 2);
-    // widgetOne.add_encoder(2, CW, -61, 10752, 1);
+    widgetOne.add_encoder(1, CCW, 241, 10752, 2);
+    widgetOne.add_encoder(2, CW, -61, 10752, 1);
     
-    // widgetOne.device_set_parameters();
+    widgetOne.device_set_parameters();
     
     /* visual elements setup */
     //background(0);
@@ -126,6 +127,7 @@ function setup() {
 
     /* setup framerate speed */
     frameRate(baseFrameRate);
+  
     
     simulationThread();
     // /* setup simulation thread to run at 1kHz */ 
@@ -133,13 +135,14 @@ function setup() {
     // scheduler.scheduleAtFixedRate(st, 1, 1, MILLISECONDS);
   }
   
-  function draw() {
-    /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-     if(renderingForce == false){
-       //  background(255);  
-      //   update_animation(angles.x*radsPerDegree, angles.y*radsPerDegree, posEE.x, posEE.y);
-     }
-  }
+   function draw() {
+
+     /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
+      if(renderingForce == false){
+  //      //  background(255);  
+  //     //   update_animation(angles.x*radsPerDegree, angles.y*radsPerDegree, posEE.x, posEE.y);
+      }
+   }
 
 // if (window.Worker) {
 //     // console.log("here");
@@ -150,52 +153,129 @@ function setup() {
 //     console.log("oops!");
 // }
 
-function simulationThread(){}
-// function simulationThread()
-// {
-    console.debug("PING from simulation thread");
+var serial;
+var inData;
+
+function simulationThread()
+{
+    serial = new p5.SerialPort();       // make a new instance of the serialport library
+    serial.on('connected', serverConnected); // callback for connecting to the server
+    serial.on('open', portOpen);        // callback for the port opening
+    serial.on('data', serialEvent);     // callback for when new data arrives
+    serial.on('error', serialError);    // callback for errors
+    serial.on('close', portClose);      // callback for the port closing
+  
+    serial.open('COM7');              // open a serial port
+
+    // console.debug("PING from simulation thread");
     if (window.Worker) {
     worker = new Worker("worker.js");
-    // document.getElementById("button").addEventListener("click",function(e) 
-    // {
-        worker.postMessage("start");
-  //   });
-  document.getElementById("button").addEventListener("click",function(e) 
-    {
-      worker.postMessage('button');
-        });
-    
-  }
-  else {
-      console.log("oops!");
-  }
-  addEventListener("message", function(e) {
-    if(e.data == 'close')
-    worker.terminate();
-  });
-  
-// }
 
-// worker.addEventListener("message", function(e) 
-    // {
-    //     worker.postMessage("ping");
-    // });
+    worker.postMessage(inData);
+
+    // setTimeout(stopWW, 1000);
+
+    // function stopWW(){
+    //     console.log('TERMINATE');
+    //     worker.terminate();
+    }
+}
+
+function serverConnected() {
+    print('connected to server.');
+  }
+  
+  function portOpen() {
+    print('the serial port opened.')
+  }
+  
+  function serialEvent() {
+    inData = Number(serial.read());
+
+        /* GET END-EFFECTOR STATE (TASK SPACE) */
+    //     widgetOne.device_read_data();
       
- // worker = new Worker('worker.js');
- // worker.postMessage("hello");
-  //workers.onmessage = workerDone;
-  //workers.postMessage({
-  //  message_1: 'first message',
-  //  message_2: 'another message'
-  //});
-  //console.log("PING3");
-    // var worker;
-    // if(haplyBoard.data_available()){
-    //      worker.postMessage("start");
-    // }
-    // else{
-    //      worker.postMessage("stop");
-    // } 
+    //     angles.set(widgetOne.get_device_angles()); 
+    //     posEE.set(widgetOne.get_device_position(angles.array()));
+    //     posEE.set(device_to_graphics(posEE)); 
+        
+    //     velEE.set((posEE.copy().sub(posEELast)).div(dt));
+    //     posEELast = posEE;
+    //     /* haptic physics force calculation */
+      
+    //   /* ball and end-effector contact forces */
+    //   posEEToBall = (posBall.copy()).sub(posEE);
+    //   posEEToBallMagnitude = posEEToBall.mag();
+      
+    //   penBall = posEEToBallMagnitude - (rBall + rEE);
+    //   /* end ball and end-effector contact forces */
+      
+      
+    //   /* ball forces */
+    //   if(penBall < 0){
+    //     rEEContact = rEE + penBall;
+    //     fContact = posEEToBall.normalize();
+    //     velEEToBall = velBall.copy().sub(velEE);
+    //     velEEToBall = fContact.copy().mult(velEEToBall.dot(fContact));
+    //     velEEToBallMagnitude = velEEToBall.mag();
+        
+    //     /* since penBall is negative kBall must be negative to ensure the force acts along the end-effector to the ball */
+    //     fContact = fContact.mult((-kBall * penBall) - (bBall * velEEToBallMagnitude));
+    //   }
+    //   else{
+    //     rEEContact = rEE;
+    //     fContact.set(0, 0);
+    //   }
+    //   /* end ball forces */
+      
+      
+    //   /* forces due to damping */
+    //   fDamping = (velBall.copy()).mult(-bAir);
+    //   /* end forces due to damping*/
+      
+      
+    //   /* forces due to walls on ball */
+    //   fWall.set(0, 0);
+      
+    //   /* left wall */
+    //   penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
+    //   if(penWall.x < 0){
+    //     fWall = fWall.add((penWall.mult(-kWall))).add((velBall.copy()).mult(-bWall));
+    //   }
+      
+    //   /* bottom wall */
+    //   penWall.set(0, (posBall.y + rBall) - posWallBottom.y);
+    //   if(penWall.y > 0){
+    //     fWall = fWall.add((penWall.mult(-kWall))).add((velBall.copy()).mult(-bWall));
+    //   }
+      
+    //   /* right wall */
+    //   penWall.set((posBall.x + rBall) - posWallRight.x, 0);
+    //   if(penWall.x > 0){
+    //     fWall = fWall.add((penWall.mult(-kWall))).add((velBall.copy()).mult(-bWall));
+    //   }
+    //   /* end forces due to walls on ball*/
+      
+      
+    //   /* sum of forces */
+    //   fBall = (fContact.copy()).add(fGravity).add(fDamping).add(fWall);      
+    //   fEE = (fContact.copy()).mult(-1);
+    //   fEE.set(graphics_to_device(fEE));
+    //   /* end sum of forces */
+      
+      
+    //   /* end haptic physics force calculation */
+
+  }
+  
+  function serialError(err) {
+    print('Something went wrong with the serial port. ' + err);
+  }
+  
+  function portClose() {
+    print('The serial port closed.');
+  }
+
 
 
 /* helper functions section, place helper functions here ***************************************************************/
@@ -300,45 +380,45 @@ function graphics_to_device(graphicsFrame){
   }
   /* end helper function ****************************************************************************************/
 
-class Device{
+  class Device{
+
+    deviceLink;
+
+	deviceID;
+	mechanism;
+	
+	communicationType;
+	
+	actuatorsActive    = 0;
+	motors             = new Actuator();//[0];
+	
+	encodersActive     = 0;
+	encoders           = new Sensor();//[0];
+	
+	sensorsActive      = 0;
+	sensors            = new Sensor();//();//[0];
+	
+	pwmsActive		     = 0;
+  pwms 			         = new Pwm();//[0];
+    
+    actuatorPositions  = [0, 0, 0, 0];
+    encoderPositions   = [0, 0, 0, 0];
     
     constructor(deviceID, deviceLink){
         this.deviceID = deviceID;
 		this.deviceLink = deviceLink;
-      
-	this.mechanism = null;
-	
-	this.communicationType = 1;
-	
-	//actuatorsActive    = 0;
-	this.motors             = new Actuator();
-	
-	//encodersActive     = 0;
-	this.encoders           = new Sensor();
-	
-	//sensorsActive      = 0;
-	this.sensors            = new Sensor();
-	
-	this.pwmsActive = 0;
-    this.pwms = new Pwm();
-      
-    
-    this.actuatorPositions  = [0, 0, 0, 0];
-    this.encoderPositions   = [0, 0, 0, 0];      
 
     }
-
     add_actuator(actuator, rotation, port){
-      
         let error = false;
         
             if(port < 1 || port > 4){
-                System.err.println("error: encoder port index out of bounds");
+                console.log("error: encoder port index out of bounds");
                 error = true;
             }
         
             if(actuator < 1 || actuator > 4){
-                System.err.println("error: encoder index out of bound!");
+                console.log("error: encoder index out of bound!");
                 error = true;
             }
             
@@ -349,20 +429,33 @@ class Device{
                 }
                 
                 if(this.motors[i].get_actuator() == actuator){
-                    System.err.println("error: actuator " + actuator + " has already been set");
+                    console.log("error: actuator " + actuator + " has already been set");
                     error = true;
                 }
             }
-    
-        
             
             if(!error){
-                let temp = new Actuator(this.actuatorsActive + 1);
+                //let temp = new Actuator(this.actuatorsActive + 1);
+
+                //const playerNames = ['name1', 'name2', 'name3'];
+                //let players = [];
+                //playerNames.forEach((playerName) => players.push(new Player(playerName)));
+
+                let temp = [];
+                for (var i = 0; i < this.actuatorsActive + 1; i++)
+                {
+                  temp.push(new Actuator(0));
+                }
+
+                //console.log(this.motors);
+                //console.log(temp);
     
                 this.arraycopy(this.motors, 0, temp, 0, this.motors.length);
+                //this.arraycopy( src, src_pos, dst, dst_pos, length )
+                //array1.copyWithin(0, 3, 4));
                 
                 if(j < this.actuatorsActive){
-                    this.arraycopy(this.motors, j, temp, j+1, this.motors.length - j);
+                  this.arraycopy(this.motors, j, temp, j+1, this.motors.length - j);
                 }
                 
                 temp[j] = new Actuator(actuator, rotation, port);
@@ -372,6 +465,7 @@ class Device{
                 this.actuatorsActive++;
             }
         }
+    
             add_encoder(encoder, rotation, offset, resolution, port){
                 let error = false;
             
@@ -393,19 +487,24 @@ class Device{
                     }
                     
                     if(this.encoders[i].get_encoder() == encoder){
-                        // System.err.println("error: encoder " + encoder + " has already been set");
-                      throw new Error("error: encoder " + encoder + " has already been set")
+                        console.log("error: encoder " + encoder + " has already been set");
                         error = true;
                     }
                 }
                 
                 if(!error){
-                    let temp = new Sensor(this.encodersActive + 1);
+                    //let temp = new Sensor[this.encodersActive + 1];
                     
+                    let temp = [];
+                    for (var i = 0; i < this.encodersActive + 1; i++)
+                    {
+                      temp.push(new Sensor(0));
+                    }
+
                     this.arraycopy(this.encoders, 0, temp, 0, this.encoders.length);
               
                     if(j < this.encodersActive){
-                        this.arraycopy(this.encoders, j, temp, j+1, this.encoders.length - j);
+                      this.arraycopy(this.encoders, j, temp, j+1, this.encoders.length - j);
                     }
                     
                     temp[j] = new Sensor(encoder, rotation, offset, resolution, port);
@@ -416,7 +515,7 @@ class Device{
                 }
             }
     
-                add_analog_sensor(pin) {
+                add_analog_sensor  (pin) {
                     // set sensor to be size zero
                     let error = false;
                     
@@ -426,24 +525,24 @@ class Device{
                     let value = Integer.parseInt(number);
                     value = value + 54;
                     
-                    for(let i = 0; i < sensorsActive; i++){
-                        if(value == sensors[i].get_port()){
-                            System.err.println("error: Analog pin: A" + (value - 54) + " has already been set");
+                    for(let i = 0; i < this.sensorsActive; i++){
+                        if(value == this.sensors[i].get_port()){
+                            console.log("error: Analog pin: A" + (value - 54) + " has already been set");
                             error = true;
                         }
                     }
                     
                     if(port != 'A' || value < 54 || value > 65){
-                            System.err.println("error: outside analog pin range");
+                            console.log("error: outside analog pin range");
                             error = true;
                     }
                     
                     if(!error){
-                        let temp = Arrays.copyOf(sensors, sensors.length + 1);
-                        temp[sensorsActive] = new Sensor();
-                        temp[sensorsActive].set_port(value);
-                        sensors = temp;
-                        sensorsActive++;
+                        let temp = Arrays.copyOf(this.sensors, this.sensors.length + 1);
+                        temp[this.sensorsActive] = new Sensor();
+                        temp[this.sensorsActive].set_port(value);
+                        this.sensors = temp;
+                        this.sensorsActive++;
                     }
                 }
     
@@ -451,8 +550,8 @@ class Device{
             
                     let error = false;
                     
-                    for(let i = 0; i < pwmsActive; i++){
-                        if(pin == pwms[i].get_pin()){
+                    for(let i = 0; i < this.pwmsActive; i++){
+                        if(pin == this.pwms[i].get_pin()){
                             console.log("error: pwm pin: " + pin + " has already been set");
                             error = true;
                         }
@@ -469,13 +568,12 @@ class Device{
                     
                     
                     if(!error){
-                        const temp = Arrays.copyOf(pwms,pwms.length + 1);
-                        temp[pwmsActive] = new Pwm();
-                        temp[pwmsActive].set_pin(pin);
-                        pwms = temp;
-                        pwmsActive++;
+                        const temp = Arrays.copyOf(this.pwms, this.pwms.length + 1);
+                        temp[this.pwmsActive] = new Pwm();
+                        temp[this.pwmsActive].set_pin(pin);
+                        this.pwms = temp;
+                        this.pwmsActive++;
                     }
-                     
                 }
     
     set_mechanism (mechanism){
@@ -483,17 +581,17 @@ class Device{
     }
     
     device_set_parameters (){
-      
+            
         this.communicationType = 1;
         
         let control;
         
-        var encoderParameters = new float();
+        let encoderParameters = new float(); // was const
     
-        var encoderParams = new Uint8Array();
-        var motorParams = new Uint8Array();
-        var sensorParams = new Uint8Array();
-        var pwmParams = new Uint8Array();
+        let encoderParams = new Uint8Array;// was const
+        let motorParams = new Uint8Array;// was const
+        let sensorParams = new Uint8Array;// was const
+        let pwmParams = new Uint8Array;// was const
         
         if(this.encodersActive > 0){	
       encoderParams = new Uint8Array(this.encodersActive + 1);
@@ -501,10 +599,9 @@ class Device{
     
             for(let i = 0; i < this.encoders.length; i++){
                 if(this.encoders[i].get_encoder() != (i+1)){
-                    //System.err.println("warning, improper encoder indexing");
-                  console.warn("warning, improper encoder indexing")
+                    console.log("warning, improper encoder indexing");
                     this.encoders[i].set_encoder(i+1);
-                    encoderPositions[encoders[i].get_port() - 1] = this.encoders[i].get_encoder();
+                    this.encoderPositions[this.encoders[i].get_port() - 1] = this.encoders[i].get_encoder();
                 }
             }
             
@@ -518,12 +615,12 @@ class Device{
             
             encoderParams[0] = control;
         
-            encoderParameters = new float(2*this.encodersActive);
+            encoderParameters = new Float32Array(2*this.encodersActive);
             
             let j = 0;
             for(let i = 0; i < this.encoderPositions.length; i++){
                 if(this.encoderPositions[i] > 0){
-                    encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset();
+                    encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset(); 
                     encoderParameters[2*j+1] = this.encoders[this.encoderPositions[i]-1].get_resolution();
                     j++;
           encoderParams[j] = this.encoders[this.encoderPositions[i]-1].get_direction(); 
@@ -531,21 +628,21 @@ class Device{
             }
         }
         else{
-      encoderParams = new Uint8Array(1);
+      encoderParams = new Uint8Array(1);// byte[1];
       encoderParams[0] = 0;
-            encoderParameters = new Float32Array(0);
+            encoderParameters = new Float32Array(0);//float[0];
         }
         
         
         if(this.actuatorsActive > 0){
-      motorParams = new Uint8Array(this.actuatorsActive + 1);
+      motorParams = new Uint8Array(this.actuatorsActive + 1);//byte[this.actuatorsActive + 1];
             control = 0;
             
             for(let i = 0; i < this.motors.length; i++){
                 if(this.motors[i].get_actuator() != (i+1)){
-                    // System.err.println("warning, improper actuator indexing");
-                    motors[i].set_actuator(i+1);
-                    actuatorPositions[motors[i].get_port() - 1] = motors[i].get_actuator();
+                    console.log("warning, improper actuator indexing");
+                    this.motors[i].set_actuator(i+1);
+                    this.actuatorPositions[this.motors[i].get_port() - 1] = this.motors[i].get_actuator();
                 }
             }
             
@@ -568,28 +665,28 @@ class Device{
       }
         }
     else{
-      const motorParams = new Uint8Array(1);
+      const motorParams = new Uint8Array(1);//[1];
       motorParams[0] = 0;
     }
         
         
         if(this.sensorsActive > 0){
-            sensorParams = new Uint8Array(this.sensorsActive + 1);
-            sensorParams[0] = sensorsActive;
+            sensorParams = new Uint8Array[this.sensorsActive + 1];
+            sensorParams[0] = this.sensorsActive;
             
-            for(let i = 0; i < sensorsActive; i++){
-                sensorParams[i+1] = sensors[i].get_port();
+            for(let i = 0; i < this.sensorsActive; i++){
+                sensorParams[i+1] = this.sensors[i].get_port();
             }
             
             Arrays.sort(sensorParams);
             
             for(let i = 0; i < this.sensorsActive; i++){
-                sensors[i].set_port(sensorParams[i+1]);
+                this.sensors[i].set_port(sensorParams[i+1]);
             }
             
         }
         else{
-            sensorParams = new Uint8Array(1);
+            sensorParams = new Uint8Array(1);//byte[1];
             sensorParams[0] = 0;
         }
     
@@ -602,40 +699,57 @@ class Device{
       
       
       for(let i = 0; i < this.pwmsActive; i++){
-        temp[i] = pwms[i].get_pin();
+        temp[i] = this.pwms[i].get_pin();
       }
       
       Arrays.sort(temp);
       
-      for(let i = 0; i < pwmsActive; i++){
-        pwms[i].set_pin(temp[i]);
-        pwmParams[i+1] = pwms[i].get_pin();
+      for(let i = 0; i < this.pwmsActive; i++){
+        this.pwms[i].set_pin(temp[i]);
+        pwmParams[i+1] = this.pwms[i].get_pin();
       }
       
     }
     else{
-      pwmParams = new Uint8Array(1);
+      pwmParams = new Uint8Array(1);//byte[1];
       pwmParams[0] = 0;
     }
-            
-        
+
         const encMtrSenPwm = new Uint8Array(motorParams.length  + encoderParams.length + sensorParams.length + pwmParams.length);
         this.arraycopy(motorParams, 0, encMtrSenPwm, 0, motorParams.length);
-    this.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
+        this.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
         this.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
-    this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
+        this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
         
         this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
     }
 
     actuator_assignment(actuator, port){
 		if(this.actuatorPositions[port - 1] > 0){
-			System.err.println("warning, double check actuator port usage");
+			console.log("warning, double check actuator port usage");
 		}
 		
 		this.actuatorPositions[port - 1] = actuator;
 	}
 
+    
+    arraycopy(src, srcPos, dst, dstPos, length) {
+        while (length--) dst[dstPos++] = src[srcPos++]; return dst;
+    }
+                
+        
+  //   // console.log(motorParams);
+  //   // console.log(encMtrSenPwm);
+  //   // console.log(motorParams.length);
+
+  // //   console.log("src:" + src);
+  // //   console.log(srcIndex);
+  // //   console.log(dest);
+  // //   console.log(destIndex);
+  // //   console.log(length);
+  // // dest.splice(destIndex, length, ...src.slice(srcIndex, srcIndex + length));
+  // }
+	 
 
  /**
   * assigns encoder positions based on actuator port
@@ -643,37 +757,36 @@ class Device{
 	encoder_assignment(encoder, port){
 		
 		if(this.encoderPositions[port - 1] > 0){
-			// System.err.println("warning, double check encoder port usage");
-          console.warn('warning, double check encoder port usage'); 
+			console.log("warning, double check encoder port usage");
 		}
 		
 		this.encoderPositions[port - 1] = encoder;
 	}
     
     device_read_data (){
-        communicationType = 2;
+        let communicationType = 2;
         let dataCount = 0;
         
         //float[] device_data = new float[sensorUse + encodersActive];
-        const device_data = deviceLink.receive(communicationType, deviceID, sensorsActive + encodersActive);
+        const device_data = deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
     
-        for(let i = 0; i < sensorsActive; i++){
-            sensors[i].set_value(device_data[dataCount]);
+        for(let i = 0; i < this.sensorsActive; i++){
+            this.sensors[i].set_value(device_data[dataCount]);
             dataCount++;
         }
         
         for(let i = 0; i < encoderPositions.length; i++){
-            if(encoderPositions[i] > 0){
-                encoders[encoderPositions[i]-1].set_value(device_data[dataCount]);
+            if(this.encoderPositions[i] > 0){
+                this.encoders[encoderPositions[i]-1].set_value(device_data[dataCount]);
                 dataCount++;
             }
         }
     }
     
     device_read_request (){
-        communicationType = 2;
-        const pulses = new Uint8Array[pwmsActive];
-        const encoderRequest = new Float32Array[actuatorsActive];
+        let communicationType = 2;
+        const pulses = new Uint8Array(pwmsActive);
+        const encoderRequest = new Float32Array(actuatorsActive);
         
     for(let i = 0; i < pwms.length; i++){
       pulses[i] = pwms[i].get_value();
@@ -681,41 +794,41 @@ class Device{
     
         // think about this more encoder is detached from actuators
         let j = 0;
-        for(let i = 0; i < actuatorPositions.length; i++){
-            if(actuatorPositions[i] > 0){
+        for(let i = 0; i < this.actuatorPositions.length; i++){
+            if(this.actuatorPositions[i] > 0){
                 encoderRequest[j] = 0;
                 j++;
             }
         }
         
-        deviceLink.transmit(communicationType, deviceID, pulses, encoderRequest);
+        deviceLink.transmit(communicationType, this.deviceID, pulses, encoderRequest);
     }
     
     device_write_torques(){
-        communicationType = 2;
-        const pulses = new Uint8Array[pwmsActive];
-        const deviceTorques = new Float32Array[actuatorsActive];
+        let communicationType = 2;
+        const pulses = new Uint8Array(this.pwmsActive);
+        const deviceTorques = new Float32Array(this.actuatorsActive);
         
-    for(let i = 0; i < pwms.length; i++){
-      pulses[i] = pwms[i].get_value();
+    for(let i = 0; i < this.pwms.length; i++){
+      pulses[i] = this.pwms[i].get_value();
     }
         
         let j = 0;
-        for(let i = 0; i < actuatorPositions.length; i++){
-            if(actuatorPositions[i] > 0){
-                deviceTorques[j] = motors[actuatorPositions[i]-1].get_torque();
+        for(let i = 0; i < this.actuatorPositions.length; i++){
+            if(this.actuatorPositions[i] > 0){
+                deviceTorques[j] = this.motors[this.actuatorPositions[i]-1].get_torque();
                 j++;
             }
         }
         
-        deviceLink.transmit(communicationType, deviceID, pulses, deviceTorques);
+        deviceLink.transmit(communicationType, this.deviceID, pulses, deviceTorques);
     }
     
     set_pwm_pulse (pin, pulse){
         
-        for(let i = 0; i < pwms.length; i++){
-          if(pwms[i].get_pin() == pin){
-            pwms[i].set_pulse(pulse);
+        for(let i = 0; i < this.pwms.length; i++){
+          if(this.pwms[i].get_pin() == pin){
+            this.pwms[i].set_pulse(pulse);
           }
         }
       }	
@@ -724,9 +837,9 @@ class Device{
        
         let pulse = 0;
         
-        for(let i = 0; i < pwms.length; i++){
-          if(pwms[i].get_pin() == pin){
-            pulse = pwms[i].get_pulse();
+        for(let i = 0; i < this.pwms.length; i++){
+          if(this.pwms[i].get_pin() == pin){
+            pulse = this.pwms[i].get_pulse();
           }
         }
         
@@ -734,21 +847,21 @@ class Device{
       }
     
     get_device_angles(){
-        const angles = new Float32Array[encodersActive];
+        const angles = new Float32Array(this.encodersActive);
         
-        for(let i = 0; i < encodersActive; i++){
-            angles[i] = encoders[i].get_value();
+        for(let i = 0; i < this.encodersActive; i++){
+            angles[i] = this.encoders[i].get_value();
         }
         
         return angles;
     }
     
     get_sensor_data (){
-        const data = new Float32Array[sensorsActive];
+        const data = new Float32Array(this.sensorsActive);
         
         let j = 0;
-        for(let i = 0; i < sensorsActive; i++){
-            data[i] = sensors[i].get_value();
+        for(let i = 0; i < this.sensorsActive; i++){
+            data[i] = this.sensors[i].get_value();
         }
     
         return data;
@@ -765,140 +878,155 @@ class Device{
         this.mechanism.torqueCalculation(forces);
         var torques = this.mechanism.get_torque();
         
-        for(let i = 0; i < actuatorsActive; i++){
-            motors[i].set_torque(torques[i]);
+        for(let i = 0; i < this.actuatorsActive; i++){
+            this.motors[i].set_torque(torques[i]);
         }
         
         return torques;
     }
-
-    arraycopy(src, srcPos, dst, dstPos, length) {
-        while (length--) dst[dstPos++] = src[srcPos++]; return dst;
-    }
-	
-}
-class Mechanisms{
-  constructor() {
-    if (this.constructor === Mechanisms) {
-        throw new TypeError('Abstract class "Mechanisms" cannot be instantiated directly.'); 
-    }
-  }
-
-	forwardKinematics(angles){}
-	
-
-	torqueCalculation(forces){}
-
-
-  /**
-   * Performs force calculations
-   */
-	forceCalculation(){}
-	
-
-  /**
-   * Performs calculations for position control
-   */
-	positionControl(){}
-	
-
-  /**
-   * Performs inverse kinematics calculations
-   */
-	inverseKinematics(){}
-	
-	
-
-	set_mechanism_parameters(parameters){}
-	
-
-	set_sensor_data(data){}
-	
-	
- 
-	get_coordinate(){}
-
-	
-	
-	get_torque(){}
-
-	get_angle(){}
-	
-
 }
 
-class Pantograph extends Mechanisms{
-    l;
-    L;
-    d;
+/**
+ **********************************************************************************************************************
+ * @file       Mechanisms.java
+ * @author     Steve Ding, Colin Gallacher
+ * @version    V2.0.0
+ * @date       19-September-2018
+ * @brief      Mechanisms abstract class designed for use as a template. 
+ **********************************************************************************************************************
+ * @attention
+ *
+ *
+ **********************************************************************************************************************
+ */
+
+
+//  class Mechanisms{
+		
+
+// 	forwardKinematics(angles);
 	
-    th1;
-    th2;
-    tau1;
-    tau2;
-    f_x;
-    f_y;
-    x_E;
-    y_E;
+
+// 	torqueCalculation(forces);
+
+
+//   /**
+//    * Performs force calculations
+//    */
+// 	forceCalculation();
 	
-	pi = 3.14159265359;
-    JT11;
-    JT12;
-    JT21;
-    JT22;
-    gain = 1.0;
+
+//   /**
+//    * Performs calculations for position control
+//    */
+// 	positionControl();
+	
+
+//   /**
+//    * Performs inverse kinematics calculations
+//    */
+// 	inverseKinematics();
+	
+	
+
+// 	set_mechanism_parameters(parameters);
+	
+
+// 	set_sensor_data(data);
+	
+	
+//   /**
+//    * @return   end-effector coordinate position
+//    */
+// 	get_coordinate();
+
+	
+//   /**
+//    * @return   torque values from physics calculations
+//    */	
+// 	get_torque();
+	
+
+//   /**
+//    * @return   angle values from physics calculations
+//    */
+// 	get_angle();
+	
+
+// }
+
+class Pantograph //extends Mechanisms
+{
+
     
     constructor(){
-        super();
         this.l = 0.07;
         this.L = 0.09;
         this.d = 0.0;
+      
+    // l;
+    // L;
+    // d;
+	
+    this.th1 = 0;
+    this.th2 = 0;
+    this.tau1 = 0;
+    this.tau2 = 0;
+    this.f_x = 0;
+    this.f_y = 0;
+    this.x_E = 0;
+    this.y_E = 0;
+	
+	this.pi = 3.14159265359;
+    this.JT11 = 0;
+    this.JT12 = 0;
+    this.JT21 = 0;
+    this.JT22 = 0;
+    this.gain = 1.0;      
     }
 
     torqueCalculation(force){
-      super.torqueCalculation(force);
-        f_x = force[0];
-		f_y = force[1];
+        this.f_x = force[0];
+		this.f_y = force[1];
 
     
-        tau1 = JT11*f_x + JT12*f_y;
-		tau2 = JT21*f_x + JT22*f_y;
+        this.tau1 = this.JT11*this.f_x + this.JT12*this.f_y;
+		this.tau2 = this.JT21*this.f_x + this.JT22*this.f_y;
 		
-		tau1 = tau1*gain;
-		tau2 = tau2*gain;
+		this.tau1 = this.tau1*this.gain;
+		this.tau2 = this.tau2*this.gain;
     }
 
     forwardKinematics(angles){
-      super.forwardKinematics(angles);
-        let l1 = l;
-    let l2 = l;
-    let L1 = L;
-    let L2 = L;
+        let l1 = this.l;
+    let l2 = this.l;
+    let L1 = this.L;
+    let L2 = this.L;
     
-    th1 = pi/180*angles[0];
-    th2 = pi/180*angles[1];
+    this.th1 = this.pi/180*angles[0];
+    this.th2 = this.pi/180*angles[1];
 
     // Forward Kinematics
-    let c1 = parseFloat(cos(th1));
-    let c2 = parseFloat(cos(th2));
-    let s1 = parseFloat(sin(th1));
-    let s2 = parseFloat((sin(th2)));
+    let c1 = parseFloat(Math.cos(this.th1));
+    let c2 = parseFloat(Math.cos(this.th2));
+    let s1 = parseFloat(Math.sin(this.th1));
+    let s2 = parseFloat(Math.sin(this.th2));
     let xA = l1*c1;
     let yA = l1*s1;
-    let xB = d+l2*c2;
+    let xB = this.d+l2*c2;
      
     let yB = l2*s2;
     let hx = xB-xA; 
     let hy = yB-yA; 
     let hh = parseFloat( Math.pow(hx,2) +  Math.pow(hy,2)); 
     let hm =parseFloat(Math.sqrt(hh)); 
-    let cB = - ( parseFloat(Math.pow(L2,2)) - parseFloat(Math.pow(L1,2) - hh) / (2*L1*hm)); 
+    let cB = - (parseFloat(Math.pow(L2,2) - parseFloat(Math.pow(L1,2) - hh) / (2*L1*hm))); 
     
     let h1x = L1*cB * hx/hm; 
     let h1y = L1*cB * hy/hm; 
     let h1h1 = parseFloat(Math.pow(h1x,2)) + parseFloat(Math.pow(h1y,2)); 
     let h1m = parseFloat(Math.sqrt(h1h1)); 
-    let sB = parseFloat(  Math.sqrt(1-Math.pow(cB,2)));  
+    let sB = parseFloat(Math.sqrt(1-Math.pow(cB,2)));  
      
     let lx = -L1*sB*h1y/h1m; 
     let ly = L1*sB*h1x/h1m; 
@@ -906,59 +1034,729 @@ class Pantograph extends Mechanisms{
     let x_P = xA + h1x + lx; 
     let y_P = yA + h1y + ly; 
      
-    let phi1 = parseFloat( acos((x_P-l1*c1)/L1));
-    let phi2 = parseFloat( acos((x_P-d-l2*c2)/L2));
+    let phi1 = parseFloat(Math.acos((x_P-l1*c1)/L1));
+    let phi2 = parseFloat(Math.acos((x_P-this.d-l2*c2)/L2));
      
-    let c11 = parseFloat(  cos(phi1)); 
-    let s11 =parseFloat(  sin(phi1)); 
-    let c22= parseFloat(  cos(phi2)); 
-    let s22 = parseFloat(  sin(phi2)); 
+    let c11 = parseFloat(Math.cos(phi1)); 
+    let s11 =parseFloat(Math.sin(phi1)); 
+    let c22= parseFloat(Math.cos(phi2)); 
+    let s22 = parseFloat(Math.sin(phi2)); 
   
     let dn = L1 *(c11 * s22 - c22 * s11); 
     let eta = (-L1 * c11 * s22 + L1 * c22 * s11 - c1 * l1 * s22 + c22 * l1 * s1)  / dn;
     let nu = l2 * (c2 * s22 - c22 * s2)/dn;
     
-    JT11 = -L1 * eta * s11 - L1 * s11 - l1 * s1;
-    JT12 = L1 * c11 * eta + L1 * c11 + c1 * l1;
-    JT21 = -L1 * s11 * nu;
-    JT22 = L1 * c11 * nu;
+    this.JT11 = -L1 * eta * s11 - L1 * s11 - l1 * s1;
+    this.JT12 = L1 * c11 * eta + L1 * c11 + c1 * l1;
+    this.JT21 = -L1 * s11 * nu;
+    this.JT22 = L1 * c11 * nu;
 
-    x_E = x_P;
-    y_E = y_P;    
+    this.x_E = x_P;
+    this.y_E = y_P;   
+    
     }
 
-  
+    forceCalculation(){
+	}
+	
+	
+	positionControl(){
+	}
+	
+	
+	inverseKinematics(){
+	}
+	
+	
 	set_mechanism_parameters(parameters){
-      super.set_mechanism_parameters(parameters);
 		this.l = parameters[0];
 		this.L = parameters[1];
 		this.d = parameters[2];
 	}
 	
 	
+	set_sensor_data(data){
+	}
+	
 	
 	get_coordinate(){
-      super.get_coordinate();
-		let temp = [x_E, y_E];
+		let temp = [this.x_E, this.y_E];
 		return temp;
 	}
 	
 	
 	get_torque(){
-      super.get_torque();
-		let temp = [tau1, tau2];
+		let temp = [this.tau1, this.tau2];
 		return temp;
 	}
 	
 	
 	get_angle(){
-      super.get_angle();
-		let temp = [th1, th2];
+		let temp = [this.th1, this.th2];
 		return temp;
 	}
 
 
 }
+//   class Device{
+    
+//     constructor(deviceID, deviceLink){
+//         this.deviceID = deviceID;
+// 		this.deviceLink = deviceLink;
+      
+// 	this.mechanism = null;
+	
+// 	this.communicationType = 1;
+	
+// 	//actuatorsActive    = 0;
+// 	this.motors             = new Actuator();
+	
+// 	//encodersActive     = 0;
+// 	this.encoders           = new Sensor();
+	
+// 	//sensorsActive      = 0;
+// 	this.sensors            = new Sensor();
+	
+// 	this.pwmsActive = 0;
+//     this.pwms = new Pwm();
+      
+    
+//     this.actuatorPositions  = [0, 0, 0, 0];
+//     this.encoderPositions   = [0, 0, 0, 0];      
+
+//     }
+
+//     add_actuator(actuator, rotation, port){
+      
+//         let error = false;
+        
+//             if(port < 1 || port > 4){
+//                 System.err.println("error: encoder port index out of bounds");
+//                 error = true;
+//             }
+        
+//             if(actuator < 1 || actuator > 4){
+//                 System.err.println("error: encoder index out of bound!");
+//                 error = true;
+//             }
+            
+//             let j = 0;
+//             for(let i = 0; i < this.actuatorsActive; i++){
+//                 if(this.motors[i].get_actuator() < actuator){
+//                     j++;
+//                 }
+                
+//                 if(this.motors[i].get_actuator() == actuator){
+//                     System.err.println("error: actuator " + actuator + " has already been set");
+//                     error = true;
+//                 }
+//             }
+    
+        
+            
+//             if(!error){
+//                 let temp = new Actuator(this.actuatorsActive + 1);
+    
+//                 this.arraycopy(this.motors, 0, temp, 0, this.motors.length);
+                
+//                 if(j < this.actuatorsActive){
+//                     this.arraycopy(this.motors, j, temp, j+1, this.motors.length - j);
+//                 }
+                
+//                 temp[j] = new Actuator(actuator, rotation, port);
+//                 this.actuator_assignment(actuator, port);
+                
+//                 this.motors = temp;
+//                 this.actuatorsActive++;
+//             }
+//         }
+//             add_encoder(encoder, rotation, offset, resolution, port){
+//                 let error = false;
+            
+//                 if(port < 1 || port > 4){
+//                     console.log("error: encoder port index out of bounds");
+//                     error = true;
+//                 }
+                
+//                 if(encoder < 1 || encoder > 4){
+//                     console.log("error: encoder index out of bound!");
+//                     error = true;
+//                 }
+                
+//                 // determine index for copying
+//                 let j = 0;
+//                 for(let i = 0; i < this.encodersActive; i++){
+//                     if(this.encoders[i].get_encoder() < encoder){
+//                         j++;
+//                     }
+                    
+//                     if(this.encoders[i].get_encoder() == encoder){
+//                         // System.err.println("error: encoder " + encoder + " has already been set");
+//                       throw new Error("error: encoder " + encoder + " has already been set")
+//                         error = true;
+//                     }
+//                 }
+                
+//                 if(!error){
+//                     let temp = new Sensor(this.encodersActive + 1);
+                    
+//                     this.arraycopy(this.encoders, 0, temp, 0, this.encoders.length);
+              
+//                     if(j < this.encodersActive){
+//                         this.arraycopy(this.encoders, j, temp, j+1, this.encoders.length - j);
+//                     }
+                    
+//                     temp[j] = new Sensor(encoder, rotation, offset, resolution, port);
+//                     this.encoder_assignment(encoder, port);
+                    
+//                     this.encoders = temp;
+//                     this.encodersActive++;
+//                 }
+//             }
+    
+//                 add_analog_sensor(pin) {
+//                     // set sensor to be size zero
+//                     let error = false;
+                    
+//                     let port = pin.charAt(0);
+//                     let number = pin.substring(1);
+                    
+//                     let value = Integer.parseInt(number);
+//                     value = value + 54;
+                    
+//                     for(let i = 0; i < sensorsActive; i++){
+//                         if(value == sensors[i].get_port()){
+//                             System.err.println("error: Analog pin: A" + (value - 54) + " has already been set");
+//                             error = true;
+//                         }
+//                     }
+                    
+//                     if(port != 'A' || value < 54 || value > 65){
+//                             System.err.println("error: outside analog pin range");
+//                             error = true;
+//                     }
+                    
+//                     if(!error){
+//                         let temp = Arrays.copyOf(sensors, sensors.length + 1);
+//                         temp[sensorsActive] = new Sensor();
+//                         temp[sensorsActive].set_port(value);
+//                         sensors = temp;
+//                         sensorsActive++;
+//                     }
+//                 }
+    
+//     add_pwm_pin(pin){
+            
+//                     let error = false;
+                    
+//                     for(let i = 0; i < pwmsActive; i++){
+//                         if(pin == pwms[i].get_pin()){
+//                             console.log("error: pwm pin: " + pin + " has already been set");
+//                             error = true;
+//                         }
+//                     }
+                    
+//                     if(pin < 0 || pin > 13){
+//                             console.log("error: outside pwn pin range");
+//                             error = true;
+//                     }
+            
+//                 if(pin == 0 || pin == 1){
+//                     console.log("warning: 0 and 1 are not pwm pins on Haply M3 or Haply original");
+//                 }
+                    
+                    
+//                     if(!error){
+//                         const temp = Arrays.copyOf(pwms,pwms.length + 1);
+//                         temp[pwmsActive] = new Pwm();
+//                         temp[pwmsActive].set_pin(pin);
+//                         pwms = temp;
+//                         pwmsActive++;
+//                     }
+                     
+//                 }
+    
+//     set_mechanism (mechanism){
+//         this.mechanism = mechanism;
+//     }
+    
+//     device_set_parameters (){
+      
+//         this.communicationType = 1;
+        
+//         let control;
+        
+//         var encoderParameters = new float();
+    
+//         var encoderParams = new Uint8Array();
+//         var motorParams = new Uint8Array();
+//         var sensorParams = new Uint8Array();
+//         var pwmParams = new Uint8Array();
+        
+//         if(this.encodersActive > 0){	
+//       encoderParams = new Uint8Array(this.encodersActive + 1);
+//             control = 0;		
+    
+//             for(let i = 0; i < this.encoders.length; i++){
+//                 if(this.encoders[i].get_encoder() != (i+1)){
+//                     //System.err.println("warning, improper encoder indexing");
+//                   console.warn("warning, improper encoder indexing")
+//                     this.encoders[i].set_encoder(i+1);
+//                     encoderPositions[encoders[i].get_port() - 1] = this.encoders[i].get_encoder();
+//                 }
+//             }
+            
+//             for(let i = 0; i < this.encoderPositions.length; i++){
+//                 control = control >> 1;
+                
+//                 if(this.encoderPositions[i] > 0){
+//                     control = control | 0x0008;
+//                 }
+//             }
+            
+//             encoderParams[0] = control;
+        
+//             encoderParameters = new float(2*this.encodersActive);
+            
+//             let j = 0;
+//             for(let i = 0; i < this.encoderPositions.length; i++){
+//                 if(this.encoderPositions[i] > 0){
+//                     encoderParameters[2*j] = this.encoders[this.encoderPositions[i]-1].get_offset();
+//                     encoderParameters[2*j+1] = this.encoders[this.encoderPositions[i]-1].get_resolution();
+//                     j++;
+//           encoderParams[j] = this.encoders[this.encoderPositions[i]-1].get_direction(); 
+//                 }
+//             }
+//         }
+//         else{
+//       encoderParams = new Uint8Array(1);
+//       encoderParams[0] = 0;
+//             encoderParameters = new Float32Array(0);
+//         }
+        
+        
+//         if(this.actuatorsActive > 0){
+//       motorParams = new Uint8Array(this.actuatorsActive + 1);
+//             control = 0;
+            
+//             for(let i = 0; i < this.motors.length; i++){
+//                 if(this.motors[i].get_actuator() != (i+1)){
+//                     // System.err.println("warning, improper actuator indexing");
+//                     motors[i].set_actuator(i+1);
+//                     actuatorPositions[motors[i].get_port() - 1] = motors[i].get_actuator();
+//                 }
+//             }
+            
+//             for(let i = 0; i < this.actuatorPositions.length; i++){
+//                 control = control >> 1;
+                
+//                 if(this.actuatorPositions[i] > 0){
+//                     control = control | 0x0008;
+//                 }
+//             }
+            
+//             motorParams[0] = control;
+      
+//       let j = 1;
+//       for(let i = 0; i < this.actuatorPositions.length; i++){
+//         if(this.actuatorPositions[i] > 0){
+//           motorParams[j] = this.motors[this.actuatorPositions[i]-1].get_direction();
+//           j++;
+//         }
+//       }
+//         }
+//     else{
+//       const motorParams = new Uint8Array(1);
+//       motorParams[0] = 0;
+//     }
+        
+        
+//         if(this.sensorsActive > 0){
+//             sensorParams = new Uint8Array(this.sensorsActive + 1);
+//             sensorParams[0] = sensorsActive;
+            
+//             for(let i = 0; i < sensorsActive; i++){
+//                 sensorParams[i+1] = sensors[i].get_port();
+//             }
+            
+//             Arrays.sort(sensorParams);
+            
+//             for(let i = 0; i < this.sensorsActive; i++){
+//                 sensors[i].set_port(sensorParams[i+1]);
+//             }
+            
+//         }
+//         else{
+//             sensorParams = new Uint8Array(1);
+//             sensorParams[0] = 0;
+//         }
+    
+    
+//     if(this.pwmsActive > 0){
+//       let temp = new Uint8Array(this.pwmsActive);
+      
+//       pwmParams = new Uint8Array(this.pwmsActive + 1);
+//       pwmParams[0] = this.pwmsActive;
+      
+      
+//       for(let i = 0; i < this.pwmsActive; i++){
+//         temp[i] = pwms[i].get_pin();
+//       }
+      
+//       Arrays.sort(temp);
+      
+//       for(let i = 0; i < pwmsActive; i++){
+//         pwms[i].set_pin(temp[i]);
+//         pwmParams[i+1] = pwms[i].get_pin();
+//       }
+      
+//     }
+//     else{
+//       pwmParams = new Uint8Array(1);
+//       pwmParams[0] = 0;
+//     }
+            
+        
+//         const encMtrSenPwm = new Uint8Array(motorParams.length  + encoderParams.length + sensorParams.length + pwmParams.length);
+//         this.arraycopy(motorParams, 0, encMtrSenPwm, 0, motorParams.length);
+//     this.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
+//         this.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
+//     this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
+        
+//         this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
+//     }
+
+//     actuator_assignment(actuator, port){
+// 		if(this.actuatorPositions[port - 1] > 0){
+// 			System.err.println("warning, double check actuator port usage");
+// 		}
+		
+// 		this.actuatorPositions[port - 1] = actuator;
+// 	}
+
+
+//  /**
+//   * assigns encoder positions based on actuator port
+//   */	
+// 	encoder_assignment(encoder, port){
+		
+// 		if(this.encoderPositions[port - 1] > 0){
+// 			// System.err.println("warning, double check encoder port usage");
+//           console.warn('warning, double check encoder port usage'); 
+// 		}
+		
+// 		this.encoderPositions[port - 1] = encoder;
+// 	}
+    
+//     device_read_data (){
+//         communicationType = 2;
+//         let dataCount = 0;
+        
+//         //float[] device_data = new float[sensorUse + encodersActive];
+//         const device_data = deviceLink.receive(communicationType, deviceID, sensorsActive + encodersActive);
+    
+//         for(let i = 0; i < sensorsActive; i++){
+//             sensors[i].set_value(device_data[dataCount]);
+//             dataCount++;
+//         }
+        
+//         for(let i = 0; i < encoderPositions.length; i++){
+//             if(encoderPositions[i] > 0){
+//                 encoders[encoderPositions[i]-1].set_value(device_data[dataCount]);
+//                 dataCount++;
+//             }
+//         }
+//     }
+    
+//     device_read_request (){
+//         communicationType = 2;
+//         const pulses = new Uint8Array[pwmsActive];
+//         const encoderRequest = new Float32Array[actuatorsActive];
+        
+//     for(let i = 0; i < pwms.length; i++){
+//       pulses[i] = pwms[i].get_value();
+//     }
+    
+//         // think about this more encoder is detached from actuators
+//         let j = 0;
+//         for(let i = 0; i < actuatorPositions.length; i++){
+//             if(actuatorPositions[i] > 0){
+//                 encoderRequest[j] = 0;
+//                 j++;
+//             }
+//         }
+        
+//         deviceLink.transmit(communicationType, deviceID, pulses, encoderRequest);
+//     }
+    
+//     device_write_torques(){
+//         communicationType = 2;
+//         const pulses = new Uint8Array[pwmsActive];
+//         const deviceTorques = new Float32Array[actuatorsActive];
+        
+//     for(let i = 0; i < pwms.length; i++){
+//       pulses[i] = pwms[i].get_value();
+//     }
+        
+//         let j = 0;
+//         for(let i = 0; i < actuatorPositions.length; i++){
+//             if(actuatorPositions[i] > 0){
+//                 deviceTorques[j] = motors[actuatorPositions[i]-1].get_torque();
+//                 j++;
+//             }
+//         }
+        
+//         deviceLink.transmit(communicationType, deviceID, pulses, deviceTorques);
+//     }
+    
+//     set_pwm_pulse (pin, pulse){
+        
+//         for(let i = 0; i < pwms.length; i++){
+//           if(pwms[i].get_pin() == pin){
+//             pwms[i].set_pulse(pulse);
+//           }
+//         }
+//       }	
+    
+//     get_pwm_pulse (pin){
+       
+//         let pulse = 0;
+        
+//         for(let i = 0; i < pwms.length; i++){
+//           if(pwms[i].get_pin() == pin){
+//             pulse = pwms[i].get_pulse();
+//           }
+//         }
+        
+//         return pulse;
+//       }
+    
+//     get_device_angles(){
+//         const angles = new Float32Array[encodersActive];
+        
+//         for(let i = 0; i < encodersActive; i++){
+//             angles[i] = encoders[i].get_value();
+//         }
+        
+//         return angles;
+//     }
+    
+//     get_sensor_data (){
+//         const data = new Float32Array[sensorsActive];
+        
+//         let j = 0;
+//         for(let i = 0; i < sensorsActive; i++){
+//             data[i] = sensors[i].get_value();
+//         }
+    
+//         return data;
+//     }
+    
+//     get_device_position (angles){
+//         this.mechanism.forwardKinematics(angles);
+//         var endEffectorPosition = this.mechanism.get_coordinate();
+        
+//         return endEffectorPosition;
+//     }
+    
+//     set_device_torques (forces){
+//         this.mechanism.torqueCalculation(forces);
+//         var torques = this.mechanism.get_torque();
+        
+//         for(let i = 0; i < actuatorsActive; i++){
+//             motors[i].set_torque(torques[i]);
+//         }
+        
+//         return torques;
+//     }
+
+//     this.arraycopy(src, srcPos, dst, dstPos, length) {
+//         while (length--) dst[dstPos++] = src[srcPos++]; return dst;
+//     }
+	
+// }
+// class Mechanisms{
+//   constructor() {
+//     if (this.constructor === Mechanisms) {
+//         throw new TypeError('Abstract class "Mechanisms" cannot be instantiated directly.'); 
+//     }
+//   }
+
+// 	forwardKinematics(angles){}
+	
+
+// 	torqueCalculation(forces){}
+
+
+//   /**
+//    * Performs force calculations
+//    */
+// 	forceCalculation(){}
+	
+
+//   /**
+//    * Performs calculations for position control
+//    */
+// 	positionControl(){}
+	
+
+//   /**
+//    * Performs inverse kinematics calculations
+//    */
+// 	inverseKinematics(){}
+	
+	
+
+// 	set_mechanism_parameters(parameters){}
+	
+
+// 	set_sensor_data(data){}
+	
+	
+ 
+// 	get_coordinate(){}
+
+	
+	
+// 	get_torque(){}
+
+// 	get_angle(){}
+	
+
+// }
+
+// class Pantograph extends Mechanisms{
+//     l;
+//     L;
+//     d;
+	
+//     th1;
+//     th2;
+//     tau1;
+//     tau2;
+//     f_x;
+//     f_y;
+//     x_E;
+//     y_E;
+	
+// 	pi = 3.14159265359;
+//     JT11;
+//     JT12;
+//     JT21;
+//     JT22;
+//     gain = 1.0;
+    
+//     constructor(){
+//         super();
+//         this.l = 0.07;
+//         this.L = 0.09;
+//         this.d = 0.0;
+//     }
+
+//     torqueCalculation(force){
+//       super.torqueCalculation(force);
+//         f_x = force[0];
+// 		f_y = force[1];
+
+    
+//         tau1 = JT11*f_x + JT12*f_y;
+// 		tau2 = JT21*f_x + JT22*f_y;
+		
+// 		tau1 = tau1*gain;
+// 		tau2 = tau2*gain;
+//     }
+
+//     forwardKinematics(angles){
+//       super.forwardKinematics(angles);
+//         let l1 = l;
+//     let l2 = l;
+//     let L1 = L;
+//     let L2 = L;
+    
+//     th1 = pi/180*angles[0];
+//     th2 = pi/180*angles[1];
+
+//     // Forward Kinematics
+//     let c1 = parseFloat(cos(th1));
+//     let c2 = parseFloat(cos(th2));
+//     let s1 = parseFloat(sin(th1));
+//     let s2 = parseFloat((sin(th2)));
+//     let xA = l1*c1;
+//     let yA = l1*s1;
+//     let xB = d+l2*c2;
+     
+//     let yB = l2*s2;
+//     let hx = xB-xA; 
+//     let hy = yB-yA; 
+//     let hh = parseFloat( Math.pow(hx,2) +  Math.pow(hy,2)); 
+//     let hm =parseFloat(Math.sqrt(hh)); 
+//     let cB = - ( parseFloat(Math.pow(L2,2)) - parseFloat(Math.pow(L1,2) - hh) / (2*L1*hm)); 
+    
+//     let h1x = L1*cB * hx/hm; 
+//     let h1y = L1*cB * hy/hm; 
+//     let h1h1 = parseFloat(Math.pow(h1x,2)) + parseFloat(Math.pow(h1y,2)); 
+//     let h1m = parseFloat(Math.sqrt(h1h1)); 
+//     let sB = parseFloat(  Math.sqrt(1-Math.pow(cB,2)));  
+     
+//     let lx = -L1*sB*h1y/h1m; 
+//     let ly = L1*sB*h1x/h1m; 
+    
+//     let x_P = xA + h1x + lx; 
+//     let y_P = yA + h1y + ly; 
+     
+//     let phi1 = parseFloat( acos((x_P-l1*c1)/L1));
+//     let phi2 = parseFloat( acos((x_P-d-l2*c2)/L2));
+     
+//     let c11 = parseFloat(  cos(phi1)); 
+//     let s11 =parseFloat(  sin(phi1)); 
+//     let c22= parseFloat(  cos(phi2)); 
+//     let s22 = parseFloat(  sin(phi2)); 
+  
+//     let dn = L1 *(c11 * s22 - c22 * s11); 
+//     let eta = (-L1 * c11 * s22 + L1 * c22 * s11 - c1 * l1 * s22 + c22 * l1 * s1)  / dn;
+//     let nu = l2 * (c2 * s22 - c22 * s2)/dn;
+    
+//     JT11 = -L1 * eta * s11 - L1 * s11 - l1 * s1;
+//     JT12 = L1 * c11 * eta + L1 * c11 + c1 * l1;
+//     JT21 = -L1 * s11 * nu;
+//     JT22 = L1 * c11 * nu;
+
+//     x_E = x_P;
+//     y_E = y_P;    
+//     }
+
+  
+// 	set_mechanism_parameters(parameters){
+//       super.set_mechanism_parameters(parameters);
+// 		this.l = parameters[0];
+// 		this.L = parameters[1];
+// 		this.d = parameters[2];
+// 	}
+	
+	
+	
+// 	get_coordinate(){
+//       super.get_coordinate();
+// 		let temp = [x_E, y_E];
+// 		return temp;
+// 	}
+	
+	
+// 	get_torque(){
+//       super.get_torque();
+// 		let temp = [tau1, tau2];
+// 		return temp;
+// 	}
+	
+	
+// 	get_angle(){
+//       super.get_angle();
+// 		let temp = [th1, th2];
+// 		return temp;
+// 	}
+
+
+// }
 
 
 
