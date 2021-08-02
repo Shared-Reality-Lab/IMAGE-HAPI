@@ -1,72 +1,68 @@
-/**
- **********************************************************************************************************************
- * @file       Mechanisms.java
- * @author     Steve Ding, Colin Gallacher
- * @version    V2.0.0
- * @date       19-September-2018
- * @brief      Mechanisms abstract class designed for use as a template. 
- **********************************************************************************************************************
- * @attention
- *
- *
- **********************************************************************************************************************
- */
+// /**
+//  **********************************************************************************************************************
+//  * @file       Mechanisms.java
+//  * @author     Steve Ding, Colin Gallacher
+//  * @version    V2.0.0
+//  * @date       19-September-2018
+//  * @brief      Mechanisms abstract class designed for use as a template. 
+//  **********************************************************************************************************************
+//  * @attention
+//  *
+//  *
+//  **********************************************************************************************************************
+//  */
 
 
-class Mechanisms{
-  constructor() {
-    if (this.constructor === Mechanisms) {
-        throw new TypeError('Abstract class "Mechanisms" cannot be instantiated directly.'); 
-    }
-  }
+// class Mechanisms{
+		
 
-	forwardKinematics(angles);
+// 	forwardKinematics(angles);
 	
 
-	torqueCalculation(forces);
+// 	torqueCalculation(forces);
 
 
-  /**
-   * Performs force calculations
-   */
-	forceCalculation();
+//   /**
+//    * Performs force calculations
+//    */
+// 	forceCalculation();
 	
 
-  /**
-   * Performs calculations for position control
-   */
-	positionControl();
+//   /**
+//    * Performs calculations for position control
+//    */
+// 	positionControl();
 	
 
-  /**
-   * Performs inverse kinematics calculations
-   */
-	inverseKinematics();
+//   /**
+//    * Performs inverse kinematics calculations
+//    */
+// 	inverseKinematics();
 	
 	
 
-	set_mechanism_parameters(parameters);
+// 	set_mechanism_parameters(parameters);
 	
 
-	set_sensor_data(data);
+// 	set_sensor_data(data);
 	
 	
-  /**
-   * @return   end-effector coordinate position
-   */
-	get_coordinate();
+//   /**
+//    * @return   end-effector coordinate position
+//    */
+// 	get_coordinate();
 
 	
-  /**
-   * @return   torque values from physics calculations
-   */	
-	get_torque();
+//   /**
+//    * @return   torque values from physics calculations
+//    */	
+// 	get_torque();
 	
 
-  /**
-   * @return   angle values from physics calculations
-   */
-	get_angle();
+//   /**
+//    * @return   angle values from physics calculations
+//    */
+// 	get_angle();
 	
 
-}
+// }
