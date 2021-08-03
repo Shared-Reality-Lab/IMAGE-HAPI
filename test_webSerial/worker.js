@@ -1,29 +1,5 @@
 
 
-function closeWorker(){
-  console.log("worker before close");
-  self.close();
-  console.log("worker closed");
-  var runLoop = true;
-}
-
-var message = "";
-updateMess = function(mess){
-  message = mess;
-}
-
-getMessage = async function(m){
-  if( message == ""){ 
-    return "connect";
-  }
-  else{
-    return message;
-  }
-  
-}
-
-
-
 var counter = 0;
 var msgcount = 0;
 var runLoop=true
@@ -129,7 +105,27 @@ self.addEventListener("message", async function(e) {
   
   /**********  END CONTROL LOOP CODE *********************/
 });
+function closeWorker(){
+  console.log("worker before close");
+  self.close();
+  console.log("worker closed");
+  var runLoop = true;
+}
 
+var message = "";
+updateMess = function(mess){
+  message = mess;
+}
+
+getMessage = async function(m){
+  if( message == ""){ 
+    return "connect";
+  }
+  else{
+    return message;
+  }
+  
+}
 
 var runLoop = function() {
   renderingForce = true;
