@@ -31,6 +31,8 @@ var velEEToBallMagnitude;
 var rEE = 0.006;
 var rEEContact = 0.006;
 
+var fEE  = new Vector(0, 0); 
+
 var rBall = 0.02;
 
 var mBall = 0.15;  // kg
@@ -98,43 +100,19 @@ self.addEventListener("message", async function(e) {
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
   // self.importScripts("runLoop.js")
+  console.log(haplyBoard.readable)
   while(true){
   
-    runLoop(angles, torques, posEE, posEELast,);
-  }
-  
-  /**********  END CONTROL LOOP CODE *********************/
-});
-function closeWorker(){
-  console.log("worker before close");
-  self.close();
-  console.log("worker closed");
-  var runLoop = true;
-}
-
-var message = "";
-updateMess = function(mess){
-  message = mess;
-}
-
-getMessage = async function(m){
-  if( message == ""){ 
-    return "connect";
-  }
-  else{
-    return message;
-  }
-  
-}
-
-var runLoop = function() {
-  renderingForce = true;
+    // runLoop(angles, torques, posEE, posEELast,);
+    renderingForce = true;
     
-    if(true){  //haplyBoard.data_available()
+    if(haplyBoard.readable){  //haplyBoard.data_available()
       /* GET END-EFFECTOR STATE (TASK SPACE) */
       widgetOne.device_read_data();
+      //console.log( widgetOne.device_read_data());
     
       angles.equals(widgetOne.get_device_angles()); 
+      console.log(angles.equals(widgetOne.get_device_angles()));
       posEE.equals(widgetOne.get_device_position(angles.toArray()));
       // posEE.equals(device_to_graphics(posEE)); 
       posEE_copy =posEE.clone()
@@ -220,5 +198,126 @@ var runLoop = function() {
     
   
     renderingForce = false;
+  }
+  
+  /**********  END CONTROL LOOP CODE *********************/
+});
+function closeWorker(){
+  console.log("worker before close");
+  self.close();
+  console.log("worker closed");
+  var runLoop = true;
+}
+
+var message = "";
+updateMess = function(mess){
+  message = mess;
+}
+
+getMessage = async function(m){
+  if( message == ""){ 
+    return "connect";
+  }
+  else{
+    return message;
+  }
+  
+}
+
+var runLoop = function() {
+  // renderingForce = true;
+    
+  //   if(this.haplyBoard.readable){  //haplyBoard.data_available()
+  //     /* GET END-EFFECTOR STATE (TASK SPACE) */
+  //     widgetOne.device_read_data();
+  //     //console.log( widgetOne.device_read_data());
+    
+  //     angles.equals(widgetOne.get_device_angles()); 
+  //     console.log(angles.equals(widgetOne.get_device_angles()));
+  //     posEE.equals(widgetOne.get_device_position(angles.toArray()));
+  //     // posEE.equals(device_to_graphics(posEE)); 
+  //     posEE_copy =posEE.clone()
+  //     velEE.equals(((posEE_copy).subtract(posEELast)).divide(dt));
+  //     posEELast = posEE;
+      
+      
+  //     /* haptic physics force calculation */
+      
+  //     /* ball and end-effector contact forces */
+  //     posEEToBall = (posBall.clone()).subtract(posEE);
+  //     posEEToBallMagnitude = posEEToBall.mag();
+      
+  //     penBall = posEEToBallMagnitude - (rBall + rEE);
+  //     /* end ball and end-effector contact forces */
+      
+      
+  //     /* ball forces */
+  //     if(penBall < 0){
+  //       rEEContact = rEE + penBall;
+  //       fContact = posEEToBall.normalize();
+  //       velEEToBall = velBall.clone().subtract(velEE);
+  //       velEEToBall = fContact.clone().multiply(velEEToBall.dot(fContact));
+  //       velEEToBallMagnitude = velEEToBall.mag();
+        
+  //       /* since penBall is negative kBall must be negative to ensure the force acts along the end-effector to the ball */
+  //       fContact = fContact.multiply((-kBall * penBall) - (bBall * velEEToBallMagnitude));
+  //     }
+  //     else{
+  //       rEEContact = rEE;
+  //       fContact.equals(0, 0);
+  //     }
+  //     /* end ball forces */
+      
+      
+  //     /* forces due to damping */
+  //     fDamping = (velBall.clone()).multiply(-bAir);
+  //     /* end forces due to damping*/
+      
+      
+  //     /* forces due to walls on ball */
+  //     fWall.equals(0, 0);
+      
+  //     /* left wall */
+  //     penWall.equals((posBall.x - rBall) - posWallLeft.x, 0);
+  //     if(penWall.x < 0){
+  //       fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
+  //     }
+      
+  //     /* bottom wall */
+  //     penWall.equals(0, (posBall.y + rBall) - posWallBottom.y);
+  //     if(penWall.y > 0){
+  //       fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
+  //     }
+      
+  //     /* right wall */
+  //     penWall.equals((posBall.x + rBall) - posWallRight.x, 0);
+  //     if(penWall.x > 0){
+  //       fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
+  //     }
+  //     /* end forces due to walls on ball*/
+      
+      
+  //     /* sum of forces */
+  //     fBall = (fContact.clone()).add(fGravity).add(fDamping).add(fWall);      
+  //     fEE = (fContact.clone()).multiply(-1);
+  //     // fEE.equals(graphics_to_device(fEE));
+  //     /* end sum of forces */
+      
+      
+  //     /* end haptic physics force calculation */
+  //   }
+    
+  //   /* dynamic state of ball calculation (integrate acceleration of ball) */
+  //   posBall = (((fBall.clone()).divide(2*mBall)).multiply(dt*dt)).add((velBall.clone()).multiply(dt)).add(posBall);
+  //   velBall = (((fBall.clone()).divide(mBall)).multiply(dt)).add(velBall);
+  //   /*end dynamic state of ball calculation */
+    
+    
+    
+  //   torques.equals(widgetOne.set_device_torques(fEE.toArray()));
+  //   widgetOne.device_write_torques();
+    
+  
+  //   renderingForce = false;
 }
 

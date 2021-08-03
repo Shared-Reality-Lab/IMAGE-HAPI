@@ -1,6 +1,6 @@
 class Board {
     //communicationType;  //type of communication taking place
-    deviceID; //ID of device transmitting the information
+    // deviceID; //ID of device transmitting the information
     //bData; //byte inforamation to be transmitted
     //fData; //float information to be transmitted
     //type; // type of communication taking place
@@ -32,6 +32,7 @@ class Board {
 			  await this.port.open({ baudRate: 57600 }); // `baudRate` was `baudrate` in previous versions.
 	  
 			  this.writer = this.port.writable.getWriter();
+			  console.log(this.writer);
 			  this.reader = this.port.readable.getReader();
 	  
 			  const signals = await this.port.getSignals();
