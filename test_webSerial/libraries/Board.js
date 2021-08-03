@@ -110,9 +110,9 @@ class Board {
     }
 
     data_available(){
-        available = false;
+        let available = false;
         
-        if(port.available() > 0){
+        if(this.port.readable){
             available = true;
         }
         

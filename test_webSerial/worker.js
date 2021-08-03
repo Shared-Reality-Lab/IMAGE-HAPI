@@ -100,13 +100,13 @@ self.addEventListener("message", async function(e) {
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
   // self.importScripts("runLoop.js")
-  console.log(haplyBoard.readable)
+  console.log("available: ", haplyBoard.data_available() );
   while(true){
   
     // runLoop(angles, torques, posEE, posEELast,);
     renderingForce = true;
     
-    if(haplyBoard.readable){  //haplyBoard.data_available()
+    if(haplyBoard.data_available()){  //
       /* GET END-EFFECTOR STATE (TASK SPACE) */
       widgetOne.device_read_data();
       //console.log( widgetOne.device_read_data());
