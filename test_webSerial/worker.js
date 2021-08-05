@@ -101,34 +101,7 @@ self.addEventListener("message", async function(e) {
   // self.importScripts("runLoop.js")
   
   console.log("available: ", haplyBoard.data_available() );
-  runLoop();
-  
-  
-  /**********  END CONTROL LOOP CODE *********************/
-});
-function closeWorker(){
-  console.log("worker before close");
-  self.close();
-  console.log("worker closed");
-  var runLoop = true;
-}
-
-var message = "";
-updateMess = function(mess){
-  message = mess;
-}
-
-getMessage = async function(m){
-  if( message == ""){ 
-    return "connect";
-  }
-  else{
-    return message;
-  }
-  
-}
-
-function runLoop() {
+  //runLoop();
   while(true){
   
     // runLoop(angles, torques, posEE, posEELast,);
@@ -235,5 +208,33 @@ function runLoop() {
   
     renderingForce = false;
   }
+  
+  
+  /**********  END CONTROL LOOP CODE *********************/
+});
+function closeWorker(){
+  console.log("worker before close");
+  self.close();
+  console.log("worker closed");
+  var runLoop = true;
+}
+
+var message = "";
+updateMess = function(mess){
+  message = mess;
+}
+
+getMessage = async function(m){
+  if( message == ""){ 
+    return "connect";
+  }
+  else{
+    return message;
+  }
+  
+}
+
+function runLoop() {
+  
 }
 
