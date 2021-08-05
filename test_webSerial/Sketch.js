@@ -147,10 +147,21 @@ async function workerSetup(){
 }
 
 
+// worker.onmessage = (e) => {
+    
+//   }
+
+
 if (window.Worker) {
     // console.log("here");
     worker = new Worker("worker.js");
     document.getElementById("button").addEventListener("click", workerSetup);
+    worker.addEventListener("message", function(msg){
+        // console.log('Message received from worker', msg.data);
+        posEE.set([msg.data[0], msg.data[1]]);
+        console.log('Message received from worker', posEE);
+    });
+    
 }
 else {
     console.log("oops!");

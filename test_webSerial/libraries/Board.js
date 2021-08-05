@@ -49,8 +49,8 @@ class Board {
 	}
 
     async transmit(communicationType, deviceID, bData, fData){
-        let outData = new ArrayBuffer(2 + bData.length + 4 * fData.length);
-		let segments = new ArrayBuffer(4);
+        let outData = new Uint8Array(2 + bData.length + 4 * fData.length);
+		let segments = new Uint8Array(4);
 
 		//console.log(fData.length);
 		//console.log(segments.)
@@ -60,19 +60,20 @@ class Board {
 		
 		// this.deviceID = deviceID;
 		
-		// this.arraycopy(bData, 0, outData, 2, bData.length);
+		this.arraycopy(bData, 0, outData, 2, bData.length);
 		
-		// let j = 2 + bData.length;
-		// for(let i = 0; i < fData.length; i++){
-		// 	segments = this.FloatToBytes(fData[i]);
-		// 	this.arraycopy(segments, 0, outData, j, 4);
-		// 	j = j + 4;
-		// }
+		 let j = 2 + bData.length;
+		for(let i = 0; i < fData.length; i++){
+			segments = this.FloatToBytes(fData[i]);
+			this.arraycopy(segments, 0, outData, j, 4);
+			j = j + 4;
+		}
 		
 		// this.port.write(outData);
 
 		const dataArrayBuffer = this.encoder.encode(outData);
-    	return await this.writer.write(dataArrayBuffer);
+		// return await this.writer.write(dataArrayBuffer);
+		return await this.writer.write(dataArrayBuffer);
     }
 
     async receive(communicationType, deviceID, expected){
@@ -100,6 +101,7 @@ class Board {
 		// return data;
 		try {
 			const readerData = await this.reader.read();
+			print(this.decoder.decode(readerData.value));
 			return this.decoder.decode(readerData.value);
 		  } catch (err) {
 			const errorMessage = `error reading data: ${err}`;
@@ -135,13 +137,16 @@ class Board {
     FloatToBytes(val){
 
 		//let v = this.FloatToIEEE(val)
-		let segments = new ArrayBuffer(4);
-		let temp = this.floatToRawIntBits(val);
+		// let segments = new Uint8Array(4);
+		// let temp = this.floatToRawIntBits(val);
   
-		segments[3] = (byte)((temp >> 24) & 0xff);
-		segments[2] = (byte)((temp >> 16) & 0xff);
-		segments[1] = (byte)((temp >> 8) & 0xff);
-		segments[0] = (byte)((temp) & 0xff);
+		// segments[3] = (uint8)((temp >> 24) & 0xff);
+		// segments[2] = (uint8)((temp >> 16) & 0xff);
+		// segments[1] = (uint8)((temp >> 8) & 0xff);
+		// segments[0] = (uint8)((temp) & 0xff);
+		let buffer = new ArrayBuffer(val.byteLength);
+		let floatView = new Float32Array(buffer).set(val);
+		var segments = new Uint8Array(buffer);
 
 		return segments;
   
