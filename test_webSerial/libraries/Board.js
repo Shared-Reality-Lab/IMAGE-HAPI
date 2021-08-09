@@ -37,6 +37,7 @@ class Board {
 	  
 			  const signals = await this.port.getSignals();
 			  console.log(signals);
+			  this.reset_board();
 			} catch(err) {
 			  console.error('There was an error opening the serial port:', err);
 			}
@@ -49,6 +50,7 @@ class Board {
 	}
 
     async transmit(communicationType, deviceID, bData, fData){
+		// console.log("this is in transmit: ");
         let outData = new Uint8Array(2 + bData.length + 4 * fData.length);
 		let segments = new Uint8Array(4);
 
@@ -62,18 +64,23 @@ class Board {
 		
 		this.arraycopy(bData, 0, outData, 2, bData.length);
 		
-		 let j = 2 + bData.length;
-		for(let i = 0; i < fData.length; i++){
-			segments = this.FloatToBytes(fData[i]);
-			this.arraycopy(segments, 0, outData, j, 4);
-			j = j + 4;
-		}
+		//  let j = 2 + bData.length;
+		segments = this.FloatToBytes(fData);
+		this.arraycopy(segments, 0, outData,2 + bData.length , fData.length);
+		// for(let i = 0; i < fData.length; i++){
+		// 	segments = this.FloatToBytes(fData[i]);
+		// 	this.arraycopy(segments, 0, outData, j, 4);
+		// 	j = j + 4;
+		// }
 		
 		// this.port.write(outData);
-
-		const dataArrayBuffer = this.encoder.encode(outData);
+		console.log('this is in trasmit:');
+		console.log(outData);
+		// const dataArrayBuffer = this.encoder.encode(outData);
 		// return await this.writer.write(dataArrayBuffer);
-		return await this.writer.write(dataArrayBuffer);
+		// console.log(dataArrayBuffer);
+		// return await this.writer.write(dataArrayBuffer);
+		return await this.writer.write(outData)
     }
 
     async receive(communicationType, deviceID, expected){

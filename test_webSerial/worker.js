@@ -88,11 +88,11 @@ self.addEventListener("message", async function(e) {
   widgetOne.add_actuator(1, -1, 2); //CCW
   widgetOne.add_actuator(2, 1, 1); //CW
   
-  widgetOne.add_encoder(1, -1, 241, 10752, 2);
+  widgetOne.add_encoder(1, -1, 241, 10752, 2); 
   widgetOne.add_encoder(2, 1, -61, 10752, 1);
   
   widgetOne.device_set_parameters();
-  // haplyBoard.transmit(1,widgetOneID,[1,1], [1,1])
+  haplyBoard.transmit(2,widgetOneID,[1,1], ["1","1"])
   // await this.writer.write("1");
 
   /************************ END SETUP CODE ************************* */
@@ -104,8 +104,9 @@ self.addEventListener("message", async function(e) {
   //runLoop();
   while(true){
   
-    // runLoop(angles, torques, posEE, posEELast,);
+  //   // runLoop(angles, torques, posEE, posEELast,);
     renderingForce = true;
+  
     
     if(haplyBoard.data_available()){  //
       /* GET END-EFFECTOR STATE (TASK SPACE) */

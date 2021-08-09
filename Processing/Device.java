@@ -550,7 +550,7 @@ public class Device{
 	public float[] get_sensor_data(){
 		float[] data = new float[sensorsActive];
 		
-		int j = 0;
+		// int j = 0;
 		for(int i = 0; i < sensorsActive; i++){
 			data[i] = sensors[i].get_value();
 		}
