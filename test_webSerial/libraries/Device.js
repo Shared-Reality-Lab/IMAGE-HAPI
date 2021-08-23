@@ -383,7 +383,7 @@ class Device{
 		this.encoderPositions[port - 1] = encoder;
 	}
     
-    device_read_data (){
+    async device_read_data (){
         let communicationType = 2;
         let dataCount = 0;
         

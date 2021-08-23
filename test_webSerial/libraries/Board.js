@@ -84,31 +84,11 @@ class Board {
     }
 
     async receive(communicationType, deviceID, expected){
-        // set_buffer(1 + 4 * expected);
-		
-	    // let segments = new ArrayBuffer(4);
-		
-		// let inData = new Uint8Array(1 + 4 * expected);
-		// let data = new Float32Array(expected);
-		
-		// this.port.readBytes(inData);
-		
-		// if(inData[0] != deviceID){
-		// 	console.log("Error, another device expects this data!");
-		// }
-		
-		// let j = 1;
-		
-		// for(let i = 0; i < expected; i++){
-		// 	this.arraycopy(inData, j, segments, 0, 4);
-		// 	data[i] = this.BytesToFloat(segments);
-		// 	j = j + 4;
-		// }
-		
-		// return data;
+  
 		try {
 			const readerData = await this.reader.read();
-			print(this.decoder.decode(readerData.value));
+			// print(this.decoder.decode(readerData.value));
+			console.log("reading");
 			return this.decoder.decode(readerData.value);
 		  } catch (err) {
 			const errorMessage = `error reading data: ${err}`;
@@ -131,8 +111,8 @@ class Board {
     reset_board() {
 		let communicationType = 0;
 		let deviceID = 0;
-		let bData = new Uint8Array(0);
-		let fData = new Float32Array(0);
+		let bData = new Uint8Array();
+		let fData = new Float32Array();
 		
 		this.transmit(communicationType, deviceID, bData, fData);
 	}

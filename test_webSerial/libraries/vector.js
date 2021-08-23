@@ -67,6 +67,10 @@ function Vector(x, y, z) {
     mag:function(){
         return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
     },
+    set:function(v){
+      return new Vector(v.x, v.y, v.z);
+
+    },
     init: function(x, y, z) {
       this.x = x; this.y = y; this.z = z;
       return this;
