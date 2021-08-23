@@ -68,7 +68,8 @@ function Vector(x, y, z) {
         return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
     },
     set:function(v){
-      return new Vector(v.x, v.y, v.z);
+      console.log("in set funciton. This is the input: " + v);
+      return new Vector(Math.round(v[0]), Math.round(v[1]), Math.round(v[2]));
 
     },
     init: function(x, y, z) {

@@ -103,7 +103,10 @@ self.addEventListener("message", async function(e) {
   console.log("available: ", haplyBoard.data_available() );
   //runLoop();
   // await haplyBoard.receive();
-  while(true){
+  angles.init(0,0,0);
+  var looper = true;
+  while(looper){
+    looper = false;
   
     // runLoop(angles, torques, posEE, posEELast,);
     renderingForce = true;
@@ -118,15 +121,15 @@ self.addEventListener("message", async function(e) {
       // console.log("passed device read function");
       // console.log( widgetOne.device_read_data());
       // console.log("encoders: ", widgetOne.get_device_angles());
-      angles = widgetOne.get_device_angles();
-    
-      angles.init(widgetOne.get_device_angles()); 
+      // angles = widgetOne.get_device_angles();
+      // this.console.log("setting angles function");
+      angles.set(widgetOne.get_device_angles()); 
       
       angleArray = angles.toArray();
       // console.log(angles.toArray);
       // console.log(angleArray.length);
       // console.log(angleArray[0], " , ",angleArray[1], " , ", angleArray[2] );
-      posEE.init(widgetOne.get_device_position(angles.toArray()));
+      posEE.init(widgetOne.get_device_position(angleArray));
       //console.log(angles.toArray());
       // posEE.equals(device_to_graphics(posEE)); 
       //console.log(posEE.toArray());

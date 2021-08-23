@@ -477,11 +477,12 @@ class Device{
     
     get_device_angles(){
         const angles = new Float32Array(this.encodersActive);
+
         
         for(let i = 0; i < this.encodersActive; i++){
             angles[i] = this.encoders[i].get_value();
         }
-        
+        console.log(angles)
         return angles;
     }
     
