@@ -80,25 +80,13 @@ class Board {
 
     async receive(){  //communicationType, deviceID, expected
         	try {
-
-				while (true) {
-					console.log("trying to receive");
-					const { value, done } = await this.reader.read();
-					console.log("received!!");
-					if (done) {
-					  // Allow the serial port to be closed later.
-					  this.reader.releaseLock();
-					  break;
-					}
-					// value is a Uint8Array.
-					console.log(value);
-				  }
-			// console.log("trying to receive");
-			// const readerData = await this.reader.read();
-			// console.log("decoding data");
-			// console.log("Received data:", readerData);
-			// console.log(this.decoder.decode(readerData.value));
-			// return this.decoder.decode(readerData.value);
+	
+			console.log("trying to receive");
+			const readerData = await this.reader.read();
+			console.log("decoding data");
+			console.log("Received data:", readerData);
+			console.log(this.decoder.decode(readerData.value));
+			return this.decoder.decode(readerData.value);
 		  } catch (err) {
 			const errorMessage = `error reading data: ${err}`;
 			console.error(errorMessage);
