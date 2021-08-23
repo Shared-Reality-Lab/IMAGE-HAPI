@@ -34,10 +34,10 @@ class Board {
 			  this.writer = this.port.writable.getWriter();
 			  console.log(this.writer);
 			  this.reader = this.port.readable.getReader();
+			  console.log(this.reader);
 	  
 			  const signals = await this.port.getSignals();
 			  console.log(signals);
-			  this.reset_board();
 			} catch(err) {
 			  console.error('There was an error opening the serial port:', err);
 			}
@@ -50,51 +50,62 @@ class Board {
 	}
 
     async transmit(communicationType, deviceID, bData, fData){
-		// console.log("this is in transmit: ");
         let outData = new Uint8Array(2 + bData.length + 4 * fData.length);
 		let segments = new Uint8Array(4);
 
 		//console.log(fData.length);
 		//console.log(segments.)
-		
+		console.log("sending");
 		outData[0] = communicationType;
 		outData[1] = deviceID;
 		
 		// this.deviceID = deviceID;
 		
 		this.arraycopy(bData, 0, outData, 2, bData.length);
-		
-		//  let j = 2 + bData.length;
-		segments = this.FloatToBytes(fData);
-		this.arraycopy(segments, 0, outData,2 + bData.length , fData.length);
-		// for(let i = 0; i < fData.length; i++){
-		// 	segments = this.FloatToBytes(fData[i]);
-		// 	this.arraycopy(segments, 0, outData, j, 4);
-		// 	j = j + 4;
-		// }
-		
+		 let j = 2 + bData.length;
+		for(let i = 0; i < fData.length; i++){
+			segments = this.FloatToBytes(fData[i]);
+
+			this.arraycopy(segments, 0, outData, j, 4);
+			j = j + 4;
+		}
 		// this.port.write(outData);
-		console.log('this is in trasmit:');
-		console.log(outData);
-		// const dataArrayBuffer = this.encoder.encode(outData);
-		// return await this.writer.write(dataArrayBuffer);
-		// console.log(dataArrayBuffer);
-		// return await this.writer.write(dataArrayBuffer);
-		return await this.writer.write(outData)
+		console.log("data sent: ", outData);
+
+		const dataArrayBuffer = this.encoder.encode(outData);
+		//console.log("dataArrayBuffer: ", dataArrayBuffer);
+		return await this.writer.write(outData);
+		//return await this.writer.write(dataArrayBuffer);
     }
 
-    async receive(communicationType, deviceID, expected){
-  
-		try {
-			const readerData = await this.reader.read();
-			// print(this.decoder.decode(readerData.value));
-			console.log("reading");
-			return this.decoder.decode(readerData.value);
+    async receive(){  //communicationType, deviceID, expected
+        	try {
+
+				while (true) {
+					console.log("trying to receive");
+					const { value, done } = await this.reader.read();
+					console.log("received!!");
+					if (done) {
+					  // Allow the serial port to be closed later.
+					  this.reader.releaseLock();
+					  break;
+					}
+					// value is a Uint8Array.
+					console.log(value);
+				  }
+			// console.log("trying to receive");
+			// const readerData = await this.reader.read();
+			// console.log("decoding data");
+			// console.log("Received data:", readerData);
+			// console.log(this.decoder.decode(readerData.value));
+			// return this.decoder.decode(readerData.value);
 		  } catch (err) {
 			const errorMessage = `error reading data: ${err}`;
 			console.error(errorMessage);
 			return errorMessage;
 		  }
+		  console.log("returning value from receive");
+		  return value;
 		
     }
 
@@ -111,8 +122,8 @@ class Board {
     reset_board() {
 		let communicationType = 0;
 		let deviceID = 0;
-		let bData = new Uint8Array();
-		let fData = new Float32Array();
+		let bData = new Uint8Array(0);
+		let fData = new Float32Array(0);
 		
 		this.transmit(communicationType, deviceID, bData, fData);
 	}
@@ -121,8 +132,8 @@ class Board {
 		this.port.buffer(length);
 	}
 
+	// convert a float to an array of 4 bytes
     FloatToBytes(val){
-
 		//let v = this.FloatToIEEE(val)
 		// let segments = new Uint8Array(4);
 		// let temp = this.floatToRawIntBits(val);
@@ -131,11 +142,10 @@ class Board {
 		// segments[2] = (uint8)((temp >> 16) & 0xff);
 		// segments[1] = (uint8)((temp >> 8) & 0xff);
 		// segments[0] = (uint8)((temp) & 0xff);
-		let buffer = new ArrayBuffer(val.byteLength);
-		let floatView = new Float32Array(buffer).set(val);
-		var segments = new Uint8Array(buffer);
-
-		return segments;
+		var farr = new Float32Array(1);
+		farr[0] = val;
+		var barr = new Uint8Array(farr.buffer);
+		return barr;
   
 	}
 

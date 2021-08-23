@@ -17,8 +17,8 @@ class Device{
 	sensorsActive      = 0;
 	sensors            = new Sensor();//();//[0];
 	
-	pwmsActive		   = 0;
-    pwms 			   = new Pwm();//[0];
+	pwmsActive		     = 0;
+  pwms 			         = new Pwm();//[0];
     
     actuatorPositions  = [0, 0, 0, 0];
     encoderPositions   = [0, 0, 0, 0];
@@ -85,7 +85,7 @@ class Device{
             }
         }
     
-        add_encoder(encoder, rotation, offset, resolution, port){
+            add_encoder(encoder, rotation, offset, resolution, port){
                 let error = false;
             
                 if(port < 1 || port > 4){
@@ -134,7 +134,7 @@ class Device{
                 }
             }
     
-            add_analog_sensor  (pin) {
+                add_analog_sensor  (pin) {
                     // set sensor to be size zero
                     let error = false;
                     
@@ -200,6 +200,9 @@ class Device{
     }
     
     device_set_parameters (){
+
+        // initialize parameters
+        console.log("initialize the board");
             
         this.communicationType = 1;
         
@@ -213,7 +216,7 @@ class Device{
         let pwmParams = new Uint8Array;// was const
         
         if(this.encodersActive > 0){	
-        encoderParams = new Uint8Array(this.encodersActive + 1);
+      encoderParams = new Uint8Array(this.encodersActive + 1);
             control = 0;		
     
             for(let i = 0; i < this.encoders.length; i++){
@@ -339,9 +342,9 @@ class Device{
         this.arraycopy(encoderParams, 0, encMtrSenPwm, motorParams.length, encoderParams.length);
         this.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
         this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
-        console.log("this is in set parameters: ");
-        this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
         
+        console.log("sending the parameters");
+        this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
     }
 
     actuator_assignment(actuator, port){
@@ -388,7 +391,13 @@ class Device{
         let dataCount = 0;
         
         //float[] device_data = new float[sensorUse + encodersActive];
-        const device_data = await this.deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
+        console.log("starting device read")
+        
+        let device_data =  await this.deviceLink.receive()//communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
+        //this.deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive).then(device_data);
+        console.log("the device data is: " + device_data);
+        console.log(device_data[0]);
+        console.log("done device read");
     
         for(let i = 0; i < this.sensorsActive; i++){
             this.sensors[i].set_value(device_data[dataCount]);
@@ -421,7 +430,7 @@ class Device{
             }
         }
         
-        deviceLink.transmit(communicationType, this.deviceID, pulses, encoderRequest);
+        this.deviceLink.transmit(communicationType, this.deviceID, pulses, encoderRequest);
     }
     
     device_write_torques(){
