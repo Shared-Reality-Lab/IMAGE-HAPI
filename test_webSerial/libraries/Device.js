@@ -9,16 +9,16 @@ class Device{
 	communicationType;
 	
 	actuatorsActive    = 0;
-	motors             = new Actuator();//[0];
+	motors             = [];//new Actuator();
 	
 	encodersActive     = 0;
-	encoders           = new Sensor();//[0];
+	encoders           = [];//new Sensor();
 	
 	sensorsActive      = 0;
-	sensors            = new Sensor();//();//[0];
+	sensors            = [];//new Sensor();
 	
-	pwmsActive		     = 0;
-  pwms 			         = new Pwm();//[0];
+	pwmsActive		    = 0;
+    pwms 			    = [];//new Pwm();
     
     actuatorPositions  = [0, 0, 0, 0];
     encoderPositions   = [0, 0, 0, 0];
@@ -42,6 +42,7 @@ class Device{
             }
             
             let j = 0;
+            console.log(this.motors);
             for(let i = 0; i < this.actuatorsActive; i++){
                 if(this.motors[i].get_actuator() < actuator){
                     j++;
@@ -54,34 +55,20 @@ class Device{
             }
             
             if(!error){
-                //let temp = new Actuator(this.actuatorsActive + 1);
-
-                //const playerNames = ['name1', 'name2', 'name3'];
-                //let players = [];
-                //playerNames.forEach((playerName) => players.push(new Player(playerName)));
 
                 let temp = [];
                 for (var i = 0; i < this.actuatorsActive + 1; i++)
                 {
-                  temp.push(new Actuator(0));
+                  temp[i] = this.motors[i];
                 }
 
-                //console.log(this.motors);
-                //console.log(temp);
-    
-                this.arraycopy(this.motors, 0, temp, 0, this.motors.length);
-                //this.arraycopy( src, src_pos, dst, dst_pos, length )
-                //array1.copyWithin(0, 3, 4));
-                
-                if(j < this.actuatorsActive){
-                  this.arraycopy(this.motors, j, temp, j+1, this.motors.length - j);
-                }
-                
-                temp[j] = new Actuator(actuator, rotation, port);
+                temp[this.actuatorsActive] = new Actuator(actuator, rotation, port);
                 this.actuator_assignment(actuator, port);
                 
                 this.motors = temp;
                 this.actuatorsActive++;
+
+                console.log(this.motors);
             }
         }
     
@@ -117,16 +104,10 @@ class Device{
                     let temp = [];
                     for (var i = 0; i < this.encodersActive + 1; i++)
                     {
-                      temp.push(new Sensor(0));
-                    }
-
-                    this.arraycopy(this.encoders, 0, temp, 0, this.encoders.length);
-              
-                    if(j < this.encodersActive){
-                      this.arraycopy(this.encoders, j, temp, j+1, this.encoders.length - j);
+                      temp[i] = this.encoders[i];
                     }
                     
-                    temp[j] = new Sensor(encoder, rotation, offset, resolution, port);
+                    temp[this.encodersActive] = new Sensor(encoder, rotation, offset, resolution, port);
                     this.encoder_assignment(encoder, port);
                     
                     this.encoders = temp;
@@ -196,13 +177,11 @@ class Device{
                 }
     
     set_mechanism (mechanism){
+        console.log(mechanism);
         this.mechanism = mechanism;
     }
     
     device_set_parameters (){
-
-        // initialize parameters
-        console.log("initialize the board");
             
         this.communicationType = 1;
         
@@ -210,10 +189,12 @@ class Device{
         
         let encoderParameters = new Float32Array(); // was const
     
-        let encoderParams = new Uint8Array;// was const
-        let motorParams = new Uint8Array;// was const
-        let sensorParams = new Uint8Array;// was const
-        let pwmParams = new Uint8Array;// was const
+        let encoderParams = [];// = new Uint8Array;// was const
+        let motorParams = []// = new Uint8Array;// was const
+        let sensorParams = [];// = new Uint8Array;// was const
+        let pwmParams = [];// = new Uint8Array;// was const
+
+        console.log(encoderParams.length);
         
         if(this.encodersActive > 0){	
       encoderParams = new Uint8Array(this.encodersActive + 1);
@@ -343,7 +324,10 @@ class Device{
         this.arraycopy(sensorParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length, sensorParams.length);
         this.arraycopy(pwmParams, 0, encMtrSenPwm, motorParams.length+encoderParams.length+sensorParams.length, pwmParams.length);
         
-        console.log("sending the parameters");
+        //console.log(this.deviceLink);
+        console.log("call from device");
+        console.log(this.deviceLink);
+        //this.deviceLink.transmit(2,1,[1], 5);
         this.deviceLink.transmit(this.communicationType, this.deviceID, encMtrSenPwm, encoderParameters);	
     }
 
@@ -391,14 +375,10 @@ class Device{
         let dataCount = 0;
         
         //float[] device_data = new float[sensorUse + encodersActive];
-        console.log("starting device read")
-        
-        let device_data =  await this.deviceLink.receive()//communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
-        //this.deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive).then(device_data);
-        console.log("the device data is: " + device_data);
-        console.log(device_data[0]);
-        console.log("done device read");
+        const device_data = await this.deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
     
+        console.log("device_data: " + device_data);
+
         for(let i = 0; i < this.sensorsActive; i++){
             this.sensors[i].set_value(device_data[dataCount]);
             dataCount++;
@@ -406,6 +386,7 @@ class Device{
         
         for(let i = 0; i < this.encoderPositions.length; i++){
             if(this.encoderPositions[i] > 0){
+               // console.log(device_data[dataCount]);
                 this.encoders[this.encoderPositions[i]-1].set_value(device_data[dataCount]);
                 dataCount++;
             }
@@ -430,7 +411,7 @@ class Device{
             }
         }
         
-        this.deviceLink.transmit(communicationType, this.deviceID, pulses, encoderRequest);
+        deviceLink.transmit(communicationType, this.deviceID, pulses, encoderRequest);
     }
     
     device_write_torques(){
@@ -477,12 +458,10 @@ class Device{
     
     get_device_angles(){
         const angles = new Float32Array(this.encodersActive);
-
         
         for(let i = 0; i < this.encodersActive; i++){
             angles[i] = this.encoders[i].get_value();
         }
-        console.log(angles)
         return angles;
     }
     
@@ -507,6 +486,8 @@ class Device{
     set_device_torques (forces){
         this.mechanism.torqueCalculation(forces);
         var torques = this.mechanism.get_torque();
+
+        //torques = [-10, 0];
         
         for(let i = 0; i < this.actuatorsActive; i++){
             this.motors[i].set_torque(torques[i]);
@@ -515,4 +496,3 @@ class Device{
         return torques;
     }
 }
-

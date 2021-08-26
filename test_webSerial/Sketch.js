@@ -89,14 +89,14 @@ var ball, leftWall, bottomWall, rightWall;
 function setup() {
     createCanvas(800, 800);
 
-   
-
-
-   
-    
     /* visual elements setup */
-    background(0);
+   // background(0);
     deviceOrigin.add(worldPixelWidth/2, 0);
+
+    // angles.x = Math.random();
+    // angles.y = Math.random();
+    // posEE.x = Math.random();
+    // posEE.y = Math.random();
     
     /* create pantagraph graphics */
     create_pantagraph();
@@ -130,10 +130,13 @@ function setup() {
    function draw() {
 
      /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-    //   if(renderingForce == false){
-  //      //  background(255);  
-  //     //   update_animation(angles.x*radsPerDegree, angles.y*radsPerDegree, posEE.x, posEE.y);
-    //   }
+       if(renderingForce == false){
+       //  background(255);  
+          update_animation(this.angles.x*radsPerDegree, 
+                            this.angles.y*radsPerDegree, 
+                            this.posEE.x, 
+                            this.posEE.y);
+       }
    }
 
 
@@ -142,14 +145,9 @@ async function workerSetup(){
     let port = await navigator.serial.requestPort();
     // let port = await navigator.serial.getPorts();
     worker.postMessage("test");
-    console.log(port);
+    //console.log(port);
     // worker.postMessage("test");
 }
-
-
-// worker.onmessage = (e) => {
-    
-//   }
 
 
 if (window.Worker) {
@@ -157,9 +155,9 @@ if (window.Worker) {
     worker = new Worker("worker.js");
     document.getElementById("button").addEventListener("click", workerSetup);
     worker.addEventListener("message", function(msg){
-        // console.log('Message received from worker', msg.data);
-        posEE.set([msg.data[0], msg.data[1]]);
-        console.log('Message received from worker', posEE);
+
+      posEE.x = msg.data.x;
+      posEE.y = msg.data.y;
     });
     
 }
@@ -181,6 +179,8 @@ function create_pantagraph(){
     pGraph.fill(255);
     pGraph.stroke(0);
     pGraph.strokeWeight(2);
+
+    //console.log(deviceOrigin.y);
     
     pGraph.vertex(deviceOrigin.x, deviceOrigin.y);
     pGraph.vertex(deviceOrigin.x, deviceOrigin.y);
@@ -220,8 +220,15 @@ function create_ball(rBall){
   
   
 function update_animation(th1, th2, xE, yE){
-    background(255);
-    
+
+  //  console.log(this.angles.x);
+    //console.log("xE is: " + xE);
+
+//    console.log(xE + ", " + yE);
+    //console.log(yE);
+
+   // background(255);
+
     var lAni = pixelsPerMeter * l;
     var LAni = pixelsPerMeter * L;
     
@@ -253,12 +260,13 @@ function update_animation(th1, th2, xE, yE){
     ball.endShape();
     //shape(ball, posBall.x * pixelsPerMeter, posBall.y * pixelsPerMeter);
     stroke(0);
-    
+
+   // console.log("xE value is: " + xE);
     
     translate(xE, yE);
     endEffector.beginShape();
     endEffector.endShape();
-     shape(endEffector);
+//     shape(endEffector);
   }
   
   
@@ -336,7 +344,7 @@ function graphics_to_device(graphicsFrame){
                 let temp = [];
                 for (var i = 0; i < this.actuatorsActive + 1; i++)
                 {
-                  temp.push(new Actuator(0));
+                  temp.push(new Actuator());
                 }
 
                 //console.log(this.motors);
@@ -390,7 +398,7 @@ function graphics_to_device(graphicsFrame){
                     let temp = [];
                     for (var i = 0; i < this.encodersActive + 1; i++)
                     {
-                      temp.push(new Sensor(0));
+                      temp.push(new Sensor());
                     }
 
                     this.arraycopy(this.encoders, 0, temp, 0, this.encoders.length);

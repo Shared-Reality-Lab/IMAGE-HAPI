@@ -8,8 +8,9 @@ class Board {
 	port;
 	reader;
 	writer;
-	encoder = new TextEncoder();
-	decoder = new TextDecoder();
+	encoder;
+	decoder;
+	prev_data;
 
     constructor(){ //portName, baud
 		// let port = await navigator.serial.requestPort();
@@ -21,6 +22,9 @@ class Board {
         // this.port.clear();
 		// this.reset_board();
 		console.log("created board")
+
+		this.encoder = new TextEncoder("utf-8");
+		this.decoder = new TextDecoder("utf-8");
 	}
 	
 	async init(){
@@ -29,12 +33,11 @@ class Board {
 			  this.port = (await navigator.serial.getPorts())[0];
 			  console.log(this.port);
 			  console.log(navigator.serial);
-			  await this.port.open({ baudRate: 57600 }); // `baudRate` was `baudrate` in previous versions.
+			  await this.port.open({ baudRate: 57600}); // `baudRate` was `baudrate` in previous versions.
 	  
 			  this.writer = this.port.writable.getWriter();
-			  console.log(this.writer);
+			  //console.log(this.writer);
 			  this.reader = this.port.readable.getReader();
-			  console.log(this.reader);
 	  
 			  const signals = await this.port.getSignals();
 			  console.log(signals);
@@ -50,55 +53,76 @@ class Board {
 	}
 
     async transmit(communicationType, deviceID, bData, fData){
+
+		//bData length is 8, fData length is 4
         let outData = new Uint8Array(2 + bData.length + 4 * fData.length);
 		let segments = new Uint8Array(4);
-
-		//console.log(fData.length);
-		//console.log(segments.)
-		console.log("sending");
+		
 		outData[0] = communicationType;
 		outData[1] = deviceID;
+
+		 this.deviceID = deviceID;
 		
-		// this.deviceID = deviceID;
+		 this.arraycopy(bData, 0, outData, 2, bData.length);
 		
-		this.arraycopy(bData, 0, outData, 2, bData.length);
 		 let j = 2 + bData.length;
 		for(let i = 0; i < fData.length; i++){
 			segments = this.FloatToBytes(fData[i]);
-
 			this.arraycopy(segments, 0, outData, j, 4);
 			j = j + 4;
 		}
-		// this.port.write(outData);
-		console.log("data sent: ", outData);
 
-		const dataArrayBuffer = this.encoder.encode(outData);
-		//console.log("dataArrayBuffer: ", dataArrayBuffer);
-		return await this.writer.write(outData);
-		//return await this.writer.write(dataArrayBuffer);
+		//console.log(outData);
+
+		this.writer.write(outData);
+		return;
     }
 
-    async receive(){  //communicationType, deviceID, expected
-        	try {
+    async receive(communicationType, deviceID, expected){
+
+	//this.set_buffer(1 + 4 * expected);
 	
-			console.log("trying to receive");
-			const readerData = await this.reader.read();
-			console.log("decoding data");
-			console.log("Received data:", readerData);
-			console.log(this.decoder.decode(readerData.value));
-			return this.decoder.decode(readerData.value);
-		  } catch (err) {
-			const errorMessage = `error reading data: ${err}`;
-			console.error(errorMessage);
-			return errorMessage;
-		  }
-		  console.log("returning value from receive");
-		  return value;
+	let segments = new Uint8Array(4);
+	
+	let inData = new Uint8Array(1 + 4 * expected);
+	let data = new Float32Array(expected);	
+	//let invalid_packet = false;
+
+	try {
+		const readerData = await this.reader.read();
+		inData = readerData.value;
+	//	console.log(inData);
+	//	console.log("receive in device: " + this.decoder.decode(readerData.value));
 		
-    }
+		if (inData[0] != deviceID){
+			throw "Error, another device expects this data!";
+		}
+		else if (inData.length != 9)
+		{
+			throw "Error, invalid inData length";
+		}
+
+		let j = 1;
+
+		for (var i = 0; i < expected; i++)
+		{
+			this.arraycopy(inData, j, segments, 0, 4);
+			data[i] = this.BytesToFloat(segments);
+			j = j + 4;
+		}
+
+		return data;
+
+	  } catch (err) {
+		  console.log("ERROR");
+		const errorMessage = `error reading data: ${err}`;
+		console.error(errorMessage);
+		return errorMessage;
+	  }
+}
 
     data_available(){
-        let available = false;
+         let available = false;
         
         if(this.port.readable){
             available = true;
@@ -117,25 +141,28 @@ class Board {
 	}
 
     set_buffer(length){
-		this.port.buffer(length);
+		//this.port.buffer(length);
 	}
 
-	// convert a float to an array of 4 bytes
     FloatToBytes(val){
+
 		//let v = this.FloatToIEEE(val)
-		// let segments = new Uint8Array(4);
-		// let temp = this.floatToRawIntBits(val);
+		let segments = new ArrayBuffer(4);
+		let temp = this.floatToRawIntBits(val);
   
-		// segments[3] = (uint8)((temp >> 24) & 0xff);
-		// segments[2] = (uint8)((temp >> 16) & 0xff);
-		// segments[1] = (uint8)((temp >> 8) & 0xff);
-		// segments[0] = (uint8)((temp) & 0xff);
-		var farr = new Float32Array(1);
-		farr[0] = val;
-		var barr = new Uint8Array(farr.buffer);
-		return barr;
+		// segments[3] = (byte)((temp >> 24) & 0xff);
+		// segments[2] = (byte)((temp >> 16) & 0xff);
+		// segments[1] = (byte)((temp >> 8) & 0xff);
+		// segments[0] = (byte)((temp) & 0xff);
+
+		segments[3] = ((temp >> 24) & 0xff);
+		segments[2] = ((temp >> 16) & 0xff);
+		segments[1] = ((temp >> 8) & 0xff);
+		segments[0] = ((temp) & 0xff);
+		return segments;
   
 	}
+
 
     BytesToFloat(segment){
   
@@ -151,7 +178,6 @@ class Board {
 		return val;
 	}
 	
-	//replaces FloatToBytes
 	floatToRawIntBits(f)
 	{
 		var buf = new ArrayBuffer(4);
