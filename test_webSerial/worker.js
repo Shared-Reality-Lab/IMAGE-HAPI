@@ -109,7 +109,7 @@ self.addEventListener("message", async function(e) {
   pantograph          = new Pantograph();
 
   widgetOne.set_mechanism(pantograph);
-  
+
   widgetOne.add_actuator(1, 1, 2); //CCW
   widgetOne.add_actuator(2, 0, 1); //CW
   
@@ -146,8 +146,11 @@ self.addEventListener("message", async function(e) {
     angles = widgetOne.get_device_angles();
     positions = widgetOne.get_device_position(angles);
 
+    var data = [angles[0], angles[1], positions[0], positions[1]]
+
     //console.log("angles: " + angles);
-    console.log("positions: " + positions);
+    //console.log("positions: " + positions);
+    this.self.postMessage(data);
 
     // run every 1 ms
     await new Promise(r => setTimeout(r, 1));
