@@ -376,6 +376,10 @@ class Device{
         
         //float[] device_data = new float[sensorUse + encodersActive];
         const device_data = await this.deviceLink.receive(communicationType, this.deviceID, this.sensorsActive + this.encodersActive);
+
+        //do not process garbled data from the serial comms
+        if (device_data[0] == 0 && device_data[1] == 0)
+            return;
     
         console.log("device_data: " + device_data);
 

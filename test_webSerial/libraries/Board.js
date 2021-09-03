@@ -86,7 +86,6 @@ class Board {
 	
 	let inData = new Uint8Array(1 + 4 * expected);
 	let data = new Float32Array(expected);	
-	//let invalid_packet = false;
 
 	try {
 		const readerData = await this.reader.read();
@@ -95,11 +94,13 @@ class Board {
 	//	console.log("receive in device: " + this.decoder.decode(readerData.value));
 		
 		if (inData[0] != deviceID){
-			throw "Error, another device expects this data!";
+			return data;
+			//throw "Error, another device expects this data!";
 		}
 		else if (inData.length != 9)
 		{
-			throw "Error, invalid inData length";
+			return data;
+			//throw "Error, invalid inData length";
 		}
 
 		let j = 1;
@@ -111,13 +112,18 @@ class Board {
 			j = j + 4;
 		}
 
+		//console.log(data);
+
+		//this.prev_data = data;
+		//console.log(data);
 		return data;
 
 	  } catch (err) {
 		  console.log("ERROR");
 		const errorMessage = `error reading data: ${err}`;
 		console.error(errorMessage);
-		return errorMessage;
+		//return new Float32Array([-60.9375, 240.9375]);//data;
+		//return data;//errorMessage;
 	  }
 }
 
