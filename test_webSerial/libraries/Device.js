@@ -42,7 +42,7 @@ class Device{
             }
             
             let j = 0;
-            console.log(this.motors);
+//            console.log(this.motors);
             for(let i = 0; i < this.actuatorsActive; i++){
                 if(this.motors[i].get_actuator() < actuator){
                     j++;
@@ -68,7 +68,7 @@ class Device{
                 this.motors = temp;
                 this.actuatorsActive++;
 
-                console.log(this.motors);
+           //     console.log(this.motors);
             }
         }
     
@@ -381,7 +381,7 @@ class Device{
         if (device_data[0] == 0 && device_data[1] == 0)
             return;
     
-        console.log("device_data: " + device_data);
+        //console.log("device_data: " + device_data);
 
         for(let i = 0; i < this.sensorsActive; i++){
             this.sensors[i].set_value(device_data[dataCount]);
@@ -390,7 +390,6 @@ class Device{
         
         for(let i = 0; i < this.encoderPositions.length; i++){
             if(this.encoderPositions[i] > 0){
-               // console.log(device_data[dataCount]);
                 this.encoders[this.encoderPositions[i]-1].set_value(device_data[dataCount]);
                 dataCount++;
             }
