@@ -49,6 +49,17 @@ function Vector(x, y, z) {
     max: function() {
       return Math.max(Math.max(this.x, this.y), this.z);
     },
+    normalize: function() {
+      let len = this.mag();
+
+      if (len !== 0) {
+        this.x = this.x / len;
+        this.y = this.y / len;
+        this.z = this.z / len;
+      }
+
+      return this;
+    },
     toAngles: function() {
       return {
         theta: Math.atan2(this.z, this.x),
@@ -67,9 +78,30 @@ function Vector(x, y, z) {
     mag:function(){
         return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
     },
-    set:function(v){
-      console.log("in set funciton. This is the input: " + v);
-      return new Vector(Math.round(v[0]), Math.round(v[1]), Math.round(v[2]));
+    set:function(x, y, z){
+      if (x instanceof Vector) {
+        this.x = x.x || 0;
+        this.y = x.y || 0;
+        this.z = x.z || 0;
+        return this;
+      }
+      if (x instanceof Array) {
+        this.x = x[0] || 0;
+        this.y = x[1] || 0;
+        this.z = x[2] || 0;
+        return this;
+      }
+      this.x = x || 0;
+      this.y = y || 0;
+      this.z = z || 0;
+      return this;
+      // this.x = v[0];
+      // this.y = v[1];
+      // this.z = v[2];
+
+      // return [this.x, this.y, this.z];
+      //console.log("in set function. This is the input: " + v);
+      //return new Vector(Math.round(v[0]), Math.round(v[1]), Math.round(v[2]));
 
     },
     init: function(x, y, z) {
