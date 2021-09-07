@@ -1,5 +1,7 @@
 
 
+
+
 function closeWorker(){
   console.log("worker before close");
   self.close();
@@ -93,6 +95,8 @@ self.addEventListener("message", async function(e) {
   self.importScripts("libraries/Pwm.js");
   self.importScripts("libraries/Device.js");
   self.importScripts("libraries/Pantograph.js");
+  self.importScripts('https://cdn.jsdelivr.net/npm/planck-js@0.3.31/lib/index.min.js')
+
   
 
 
@@ -114,13 +118,28 @@ self.addEventListener("message", async function(e) {
   widgetOne.add_encoder(2, 0, -61, 10752, 1);
 
   var run_once = false;
-  var g = new Vector(10, 20, 2);
+
+  /* 2D physics scaling and world creation */
+  // hAPI_Fisica.init(this); 
+  // hAPI_Fisica.setScale(pixelsPerCentimeter); 
+  // world               = new FWorld();
+  let gravity = planck.Vec2(0.0, -10.0);
+  let world = planck.World({
+    gravity: gravity,
+  });
+  
+
+  /* Haptic Tool Initialization */
+  s                   = new HVirtualCoupling((1)); 
+  s.h_avatar.setDensity(4);  
+  s.init(world, edgeTopLeftX+worldWidth/2, edgeTopLeftY+2); 
+  
   //widgetOne.device_set_parameters();
 
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
-  // self.importScripts("runLoop.js")
+
   while(true){
 
     if (!run_once)
@@ -129,89 +148,40 @@ self.addEventListener("message", async function(e) {
       run_once = true;
     }
 
-    widgetOne.device_read_data();
+    // input
+    var force = [0, 0];
+
+    // output, leave as is
+    var angles = [0, 0];
+    var positions = [0, 0];
+
+    widgetOne.set_device_torques(force);
+    widgetOne.device_write_torques();
+
+    await widgetOne.device_read_data();
     angles = widgetOne.get_device_angles();
     positions = widgetOne.get_device_position(angles);
-    posEE.set(positions);
 
-    velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
-
-    posEELast = posEE;
-
-  /* haptic physics force calculation */
-  
-  /* ball and end-effector contact forces */
-    posEEToBall = (posBall.clone()).subtract(posEE);
-    posEEToBallMagnitude = posEEToBall.mag();
-  
-    penBall = posEEToBallMagnitude - (rBall + rEE);
-  /* end ball and end-effector contact forces */
-
-  /* ball forces */
-    if(penBall < 0){
-    rEEContact = rEE + penBall;
-
-    fContact = posEEToBall.normalize();
-
-    velEEToBall = velBall.clone().subtract(velEE);
-    velEEToBall = fContact.clone().multiply(velEEToBall.dot(fContact));
-    velEEToBallMagnitude = velEEToBall.mag();
+    s.setToolPosition(edgeTopLeftX+worldWidth/2-(posEE).x, edgeTopLeftY+(posEE).y-7); 
     
-    /* since penBall is negative kBall must be negative to ensure the force acts along the end-effector to the ball */
-    fContact = fContact.multiply((-kBall * penBall) - (bBall * velEEToBallMagnitude));
-  }
-  else{
-    rEEContact = rEE;
-    fContact.set(0, 0);
-  }
-  /* end ball forces */
-  
-  
-  /* forces due to damping */
-  fDamping = (velBall.clone()).multiply(-bAir);
-  /* end forces due to damping*/
-  
-  /* forces due to walls on ball */
-  fWall.set(0, 0);
-
-  /* left wall */
-  penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
-  if(penWall.x < 0){
-    fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-  }
-  
-  /* bottom wall */
-  penWall.set(0, (posBall.y + rBall) - posWallBottom.y);
-  if(penWall.y > 0){
-    fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-  }
-  
-  /* right wall */
-  penWall.set((posBall.x + rBall) - posWallRight.x, 0);
-  if(penWall.x > 0){
-    fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-  }
-  /* end forces due to walls on ball*/
-  
-  
-  /* sum of forces */
-  fBall = (fContact.clone()).add(fGravity).add(fDamping).add(fWall);      
-  fEE = (fContact.clone()).multiply(-1);
-  // fEE.set(graphics_to_device(fEE));
-  /* end sum of forces */
-
-// /* dynamic state of ball calculation (integrate acceleration of ball) */
-posBall = (((fBall.clone()).divide(2*mBall)).multiply(dt*dt)).add((velBall.clone()).multiply(dt)).add(posBall);
-velBall = (((fBall.clone()).divide(mBall)).multiply(dt)).add(velBall);
-// /*end dynamic state of ball calculation */
-
-  var data = [angles[0], angles[1], positions[0], positions[1], posBall]
-  this.self.postMessage(data);
-
-  widgetOne.set_device_torques(fEE.toArray());
-  widgetOne.device_write_torques();
     
-  renderingForce = false;    
+    s.updateCouplingForce();
+    fEE.set(-s.getVirtualCouplingForceX(), s.getVirtualCouplingForceY());
+    fEE.div(100000); //dynes to newtons
+    
+    torques.set(widgetOne.set_device_torques(fEE.array()));
+    widgetOne.device_write_torques();
+  
+    world.step(1.0/1000.0);
+  
+
+    var data = [angles[0], angles[1], positions[0], positions[1]]
+
+    //console.log("angles: " + angles);
+    //console.log("positions: " + positions);
+    this.self.postMessage(data);
+
+
 
     // run every 1 ms
     await new Promise(r => setTimeout(r, 1));
@@ -219,7 +189,6 @@ velBall = (((fBall.clone()).divide(mBall)).multiply(dt)).add(velBall);
   
   /**********  END CONTROL LOOP CODE *********************/
 });
-
 
 
 
