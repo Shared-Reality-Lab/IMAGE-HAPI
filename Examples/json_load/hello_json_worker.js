@@ -120,6 +120,24 @@ function closeWorker(){
   
     /************************ END SETUP CODE ************************* */
   
+    /* Loading boxes from json*/
+    data = loadJSON('test.json');
+    let boxcoordinates = data['dimensions'];
+    let centroids = data['centroid'];
+      //for (let i = 0; i < box.length; i++) {
+        // Get each object in the array
+        // let centroid = [i];
+        // Get a position object
+        let dimension = boxcoordinates['position'];
+        // Get x,y from position
+        let x = position['x'];
+        let y = position['y'];
+    
+        // Put object in array
+        
+      //}
+    
+
     /**********  BEGIN CONTROL LOOP CODE *********************/
     // self.importScripts("runLoop.js")
     while(true){
@@ -142,11 +160,14 @@ function closeWorker(){
     
     /* ball and end-effector contact forces */
       posEEToObject = (posBall.clone()).subtract(posEE);
-      posEEToObjectMagnitude = posEEToBall.mag();
+      //posEEToObjectMagnitude;
     
       penBall = posEEToBallMagnitude - (rBall + rEE);
     /* end ball and end-effector contact forces */
-  
+    
+    
+
+    /* box force */
     /* ball forces */
       if(penBall < 0){
       rEEContact = rEE + penBall;
@@ -165,7 +186,7 @@ function closeWorker(){
       fContact.set(0, 0);
     }
     /* end ball forces */
-    
+    /* forces
     
     /* forces due to damping */
     fDamping = (velBall.clone()).multiply(-bAir);
@@ -200,10 +221,6 @@ function closeWorker(){
     // fEE.set(graphics_to_device(fEE));
     /* end sum of forces */
   
-  // /* dynamic state of ball calculation (integrate acceleration of ball) */
-  posBall = (((fBall.clone()).divide(2*mBall)).multiply(dt*dt)).add((velBall.clone()).multiply(dt)).add(posBall);
-  velBall = (((fBall.clone()).divide(mBall)).multiply(dt)).add(velBall);
-  // /*end dynamic state of ball calculation */
   
     var data = [angles[0], angles[1], positions[0], positions[1], posBall]
     this.self.postMessage(data);
