@@ -34,13 +34,12 @@ function closeWorker(){
 
   var angles = new Vector(0,0);    
   var torques= new Vector(0,0);
-  var positions = new Vector(0, 0);
+  var positions = new Vector(0,0);
   
   /* task space */
   var posEE = new Vector(0,0);   
   var posEE_copy = new Vector(0,0);
-  var posEELast =new Vector(0,0) ; 
-  var velEE =new Vector(0,0);
+  var posEELast = new Vector(0,0) ; 
   dt= 1/1000.0;
   
   var posObject = new Vector(0, 0);  
@@ -68,9 +67,7 @@ function closeWorker(){
   var fObject = new Vector(0 ,0);    
   var fContact = new Vector(0, 0);
   var fDamping = new Vector(0, 0);
-  
-  var test = new Vector(0, 0);
-  
+
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
   var kWall = 800; // N/m
@@ -81,6 +78,11 @@ function closeWorker(){
   //var posWallRight = new Vector(0.07, 0.03);
   //var posWallBottom = new Vector(0.0, 0.1);
   
+  var box_lefttop = new Vector(0, 0);
+  var box_leftbottom = new Vector(0, 0);
+  var box_righttop = new Vector(0, 0);
+  var box_rightbottom = new Vector (0, 0);
+
   var haplyBoard;
   
   self.addEventListener("message", async function(e) {
@@ -124,18 +126,8 @@ function closeWorker(){
     data = loadJSON('test.json');
     let boxcoordinates = data['dimensions'];
     let centroids = data['centroid'];
-      //for (let i = 0; i < box.length; i++) {
-        // Get each object in the array
-        // let centroid = [i];
-        // Get a position object
-        let dimension = boxcoordinates['position'];
-        // Get x,y from position
-        let x = position['x'];
-        let y = position['y'];
-    
-        // Put object in array
-        
-      //}
+    let labels = data['label'];
+    let dimension = boxcoordinates['items'];
     
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
@@ -152,8 +144,7 @@ function closeWorker(){
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
-      velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
-  
+      //velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
       posEELast = posEE;
   
     /* haptic physics force calculation */
@@ -168,33 +159,14 @@ function closeWorker(){
     
 
     /* box force */
-    /* ball forces */
-      if(penBall < 0){
-      rEEContact = rEE + penBall;
-  
-      fContact = posEEToBall.normalize();
-  
-      velEEToBall = velBall.clone().subtract(velEE);
-      velEEToBall = fContact.clone().multiply(velEEToBall.dot(fContact));
-      velEEToBallMagnitude = velEEToBall.mag();
-      
-      /* since penBall is negative kBall must be negative to ensure the force acts along the end-effector to the ball */
-      fContact = fContact.multiply((-kBall * penBall) - (bBall * velEEToBallMagnitude));
-    }
-    else{
-      rEEContact = rEE;
-      fContact.set(0, 0);
-    }
-    /* end ball forces */
-    /* forces
-    
+
+   
     /* forces due to damping */
-    fDamping = (velBall.clone()).multiply(-bAir);
+
     /* end forces due to damping*/
     
     /* forces due to walls on ball */
     fWall.set(0, 0);
-  
     /* left wall */
     penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
     if(penWall.x < 0){
@@ -222,7 +194,7 @@ function closeWorker(){
     /* end sum of forces */
   
   
-    var data = [angles[0], angles[1], positions[0], positions[1], posBall]
+    var data = [angles[0], angles[1], positions[0], positions[1]]
     this.self.postMessage(data);
   
     widgetOne.set_device_torques(fEE.toArray());

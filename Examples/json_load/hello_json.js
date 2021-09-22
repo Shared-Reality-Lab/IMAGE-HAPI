@@ -22,6 +22,13 @@ var radsPerDegree = 0.01745;
 var l = 0.07; // m
 var L = 0.09; // m
 
+/* end effector radius in meters */
+var rEE = 0.006;
+var rEEContact = 0.006;
+
+var posEEToBox;
+var posEEToCentroid;
+
 var jsondata;
 
 function preload() {
