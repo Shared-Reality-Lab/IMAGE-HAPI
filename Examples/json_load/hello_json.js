@@ -31,7 +31,23 @@ var posEEToCentroid;
 
 var jsondata;
 
-function preload() {
-    data = loadJSON('assets/bubbles.json');
+    /* Loading boxes from json*/
+data = loadJSON('test.json');
+let object = data['object'];
+let boxcoordinates = object['dimensions'];
+let centroids = data['centroid'];
+// object list to find coordinates
+let boxcoordinate = boxcoordinates['items'];
+let centroid = centroids['items'];
+let box_ulx = boxcoordinates[0];
+let box_uly = boxcoordinates[1];
+let box_brx = boxcoordinates[2];
+let box_bry = boxcoordinates[3];
 
-  }
+/* converting the box and centroid*/
+/* -0.1 to 0.1 x, 0 to 0.1 y*/
+let screen_ulx = (box_ulx * 0.2) - 0.1;
+let screen_uly = (box_uly * 0.2) - 0.1;
+let screen_brx = (box_brx * 0.1);
+let screen_bry = (box_brx * 0.1);
+
