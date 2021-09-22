@@ -56,12 +56,6 @@ function closeWorker(){
   
   //var rBall = 0.02;
   
-  //var mBall = 0.15;  // kg
-  //var kBall = 445;  // N/m
-  //var bBall = 3.7;
-  //var penBall = 0.0;  // m
-  //var bAir = 0.0;  // kg/s
-  //var fGravity = new Vector(0, 9.8*mBall);
   var dt = 1/1000.0;
   
   var fObject = new Vector(0 ,0);    
@@ -117,18 +111,11 @@ function closeWorker(){
     widgetOne.add_encoder(2, 0, -61, 10752, 1);
   
     var run_once = false;
-    var g = new Vector(10, 20, 2);
-    //widgetOne.device_set_parameters();
+    //var g = new Vector(10, 20, 2);
+    widgetOne.device_set_parameters();
   
     /************************ END SETUP CODE ************************* */
-  
-    /* Loading boxes from json*/
-    data = loadJSON('test.json');
-    let boxcoordinates = data['dimensions'];
-    let centroids = data['centroid'];
-    let labels = data['label'];
-    let dimension = boxcoordinates['items'];
-    
+     
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
     // self.importScripts("runLoop.js")
@@ -151,21 +138,14 @@ function closeWorker(){
     
     /* ball and end-effector contact forces */
       posEEToObject = (posBall.clone()).subtract(posEE);
-      //posEEToObjectMagnitude;
-    
-      penBall = posEEToBallMagnitude - (rBall + rEE);
     /* end ball and end-effector contact forces */
     
     
 
     /* box force */
 
-   
-    /* forces due to damping */
-
-    /* end forces due to damping*/
     
-    /* forces due to walls on ball */
+    /* wall force calculation*/
     fWall.set(0, 0);
     /* left wall */
     penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
