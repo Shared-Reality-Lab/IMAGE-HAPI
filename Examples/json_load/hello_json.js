@@ -34,7 +34,7 @@ var jsondata;
 var box_ulx;
 var box_uly;
 var box_brx;
-var box_bly;
+var box_bry;
 
 var screen_ulx;
 var screen_uly;
@@ -63,34 +63,35 @@ var rightWall;
 var topWall;
 
 function onFileLoad()   {
-
     let object = jsondata.object;
-    console.log(object);
+    //console.log(object);
     let boxcoordinates = object.dimensions;
     box_ulx = boxcoordinates[0];
     box_uly = boxcoordinates[1];
     box_brx = boxcoordinates[2];
     box_bry = boxcoordinates[3];
+    //console.log(box_ulx);
     
     /* converting the box and centroid*/
     /* -0.1 to 0.1 x, 0 to 0.1 y*/
-    screen_ulx = (box_ulx * 0.2) * pixelsPerMeter;
-    screen_uly = (box_uly * 0.065) * pixelsPerMeter;
-    screen_brx = (box_brx * 0.2) * pixelsPerMeter;
-    screen_bry = (box_brx * 0.065) * pixelsPerMeter;
+    screen_ulx = (box_ulx * 0.25) - 0.125;
+    screen_uly = (box_uly * 0.13);
+    screen_brx = (box_brx * 0.25) - 0.125;
+    screen_bry = (box_bry * 0.13);
 }
 
 function setup() {
     createCanvas(1000, 650);
 
     /* visual elements setup */
-    //background(0);
+    //background(255);
     deviceOrigin.add(worldPixelWidth/2, 0);
     
-    data = loadJSON('json/test.json', onFileLoad);
+    jsondata = loadJSON('json/test.json', onFileLoad);
 
     /* create pantagraph graphics */
     create_pantagraph();
+
   }
   
    function draw() {
@@ -122,9 +123,6 @@ if (window.Worker) {
         angles.y = msg.data[1];
         posEE.x = msg.data[2];
         posEE.y = msg.data[3];
-        posBall.x = msg.data[4].x;
-        posBall.y = msg.data[4].y;
-
     });
     
 }
@@ -157,7 +155,10 @@ function create_wall(x1, y1, x2, y2){
     // return beginShape(LINE, deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y+y2);
   return line(deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y+y2);
   }
-  
+
+function create_ball(x1, y1, rad)   {
+
+}
   
 function update_animation(th1, th2, xE, yE){
 

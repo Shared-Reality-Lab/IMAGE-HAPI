@@ -40,10 +40,8 @@ function closeWorker(){
   var posEE = new Vector(0,0);   
   var posEE_copy = new Vector(0,0);
   var posEELast = new Vector(0,0) ; 
-  dt= 1/1000.0;
+  var posObject = new Vector(0,0);  
   
-  var posObject = new Vector(0, 0);  
-  //var velObject = new Vector(0, 0);    
   
   var posEEToObject;
   var posEEToObjectMagnitude;
@@ -132,16 +130,11 @@ function closeWorker(){
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
-      //velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
       posEELast = posEE;
   
     /* haptic physics force calculation */
     
-    /* ball and end-effector contact forces */
-      posEEToObject = (posBall.clone()).subtract(posEE);
-    /* end ball and end-effector contact forces */
-    
-    
+   
 
     /* box force */
 
@@ -149,25 +142,6 @@ function closeWorker(){
 
     /* wall force calculation*/
     fWall.set(0, 0);
-    /* left wall */
-    penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
-    if(penWall.x < 0){
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-    }
-    
-    /* bottom wall */
-    penWall.set(0, (posBall.y + rBall) - posWallBottom.y);
-    if(penWall.y > 0){
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-    }
-    
-    /* right wall */
-    penWall.set((posBall.x + rBall) - posWallRight.x, 0);
-    if(penWall.x > 0){
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-    }
-    /* end forces due to walls on ball*/
-    
     
     /* sum of forces */
     fEE = (fContact.clone()).multiply(-1);
