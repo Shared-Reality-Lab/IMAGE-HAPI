@@ -144,8 +144,9 @@ function closeWorker(){
     
 
     /* box force */
-    
-    
+
+    /* centroid force */
+
     /* wall force calculation*/
     fWall.set(0, 0);
     /* left wall */
