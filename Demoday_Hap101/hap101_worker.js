@@ -107,9 +107,6 @@ function closeWorker(){
   var posEE = new Vector(0,0);   
   var posEE_copy = new Vector(0,0);
   var posEELast = new Vector(0,0) ; 
-  var posObject;  
-  var posEEToObject;
-  var posEEToObjectMagnitude;
   
   //var velEEToBall;
   //var velEEToBallMagnitude;
@@ -127,7 +124,7 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 150; // N/m
+  var kWall = 200; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
   
@@ -148,7 +145,7 @@ function closeWorker(){
   var objectdata = [];
   var segmentationdata = [];
 
-  var pixelsPerMeter = 5000;
+  var pixelsPerMeter = 6000;
   var worldPixelWidth = 950;
   var worldPixelHeight = 600;
 
@@ -271,23 +268,23 @@ function closeWorker(){
 
       fWall.set(0, 0);
       var penWall = new Vector(0,0);
-      var threshold = 0.02;
+      var threshold = 0.015;
       if (nearestx < nearesty && nearestx < threshold)  {
         if(x_line < conv_posEE.x) {
-          penWall.set(-kWall* (x_line - (conv_posEE.x + rEE)), 0);
+          penWall.set(-kWall* (x_line - (conv_posEE.x)), 0);
         }
         else{
-          penWall.set(-kWall* (x_line - (conv_posEE.x - rEE)), 0);
+          penWall.set(-kWall* (x_line - (conv_posEE.x)), 0);
         }
         
         fWall = penWall;
       }
       else if (nearesty < nearestx && nearesty < threshold){
         if(y_line < conv_posEE.y) {
-          penWall.set(0, kWall*(y_line - (conv_posEE.y + rEE)));
+          penWall.set(0, kWall*(y_line - (conv_posEE.y)));
         }
         else{
-          penWall.set(0, kWall*(y_line - (conv_posEE.y - rEE)));
+          penWall.set(0, kWall*(y_line - (conv_posEE.y)));
         }
         
         fWall = penWall;
