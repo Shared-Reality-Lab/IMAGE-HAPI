@@ -63,14 +63,19 @@ var rightWall;
 var topWall;
 
 function onFileLoad()   {
-    let object = jsondata.object;
-    //console.log(object);
-    let boxcoordinates = object.dimensions;
+    
+    console.log(jsondata);
+    //let object = jsondata.object;
+    //let boxcoordinates = object.dimensions;
     box_ulx = boxcoordinates[0];
     box_uly = boxcoordinates[1];
     box_brx = boxcoordinates[2];
     box_bry = boxcoordinates[3];
     //console.log(box_ulx);
+    box_ulx = 0;
+    box_uly = 0;
+    box_brx = 0;
+    box_bry = 0;
     
     /* converting the box and centroid*/
     /* -0.1 to 0.1 x, 0 to 0.1 y*/
@@ -87,7 +92,7 @@ function setup() {
     //background(255);
     deviceOrigin.add(worldPixelWidth/2, 0);
     
-    jsondata = loadJSON('json/test.json', onFileLoad);
+    jsondata = loadJSON('json/ex5_preprocessor.json', onFileLoad);
 
     /* create pantagraph graphics */
     create_pantagraph();
@@ -113,7 +118,7 @@ async function workerSetup(){
 
 if (window.Worker) {
     // console.log("here");
-    worker = new Worker("hello_json_worker.js");
+    worker = new Worker("hap101_worker.js");
     document.getElementById("button").addEventListener("click", workerSetup);
     worker.addEventListener("message", function(msg){
 
