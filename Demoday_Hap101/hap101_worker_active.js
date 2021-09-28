@@ -130,6 +130,9 @@ function closeWorker(){
   var kWall = 800; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
+
+  var pixelsPerMeter = 4000.0;
+  var radsPerDegree = 0.01745;
   
   //var posWallLeft = new Vector(-0.07, 0.03);
   //var posWallRight = new Vector(0.07, 0.03);
@@ -186,8 +189,45 @@ function closeWorker(){
      
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
+
     // self.importScripts("runLoop.js")
+    var iter =0;
+    var oldtime = 0;
+    var timetaken = 0;
+    var looptime = 500;
+    var looptiming = 0;
+    var x_m, y_m;
+    var xr = 0.4;;
+    var yr = 0.1;
+    var cumerrorx = 0;
+    var cumerrory = 0;
+    var oldex = 0;
+    var oldey = 0;
+    var buffx = 0;
+    var buffy = 0;            
+    var diffx = 0;
+    var diffy =0;
+    var smoothing = 0.80;
+    var P = 0.12;
+    var I =0;
+    var D = 0;
     while(true){
+        let starttime = performance.now();
+        let  timesincelastloop=starttime-this.timetaken;
+        iter+= 1;
+        // we check the loop is running at the desired speed (with 10% tolerance)
+        if (timesincelastloop >= looptime*1000*1.1) {
+          let freq = 1.0/timesincelastloop*1000000.0;
+          console.debug("caution, freq droped to: "+freq + " kHz");
+        } else if (iter >= 1000) {
+          let freq = 1000.0/(starttime-looptiming)*1000000.0;
+          console.debug("loop running at "  + freq + " kHz");
+          iter=0;
+          looptiming=starttime;
+        }
+    
+        let timetaken=starttime;
+    
   
       if (!run_once)
       {
@@ -204,17 +244,43 @@ function closeWorker(){
       }
   
       widgetOne.device_read_data();
+      noforce = 0;
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
       posEELast = posEE;
+      /** Draw circle path */
+      //xr = (cx + circleRadius*sin((float)(millis())/1000.0 * radpers));
+      //yr = (cy + circleRadius*cos((float)(millis())/1000.0 * radpers));
+      x_m = xr*300; 
+      y_m = yr*300+350;//mouseY;
   
     /* haptic physics force calculation */
-    /* wall force calculation*/
-    fWall.set(0, 0);
+  
     
     /* centroid force */
     //RI SG
+     // Torques from difference in endeffector and setpoint, set gain, calculate force
+     let xE = pixelsPerMeter * posEE.x;
+     let yE = pixelsPerMeter * posEE.y;
+     let timedif =  performance.now()-oldtime;
+
+     let dist_X = x_m-xE;
+     cumerrorx += dist_X*timedif*0.000000001;
+     let dist_Y = y_m-yE;
+     cumerrory += dist_Y*timedif*0.000000001;
+     //println(dist_Y*k + " " +dist_Y*k);
+     // println(timedif);
+     if (timedif > 0) {
+       buffx = (dist_X-oldex)/timedif*1000*1000;
+       buffy = (dist_Y-oldey)/timedif*1000*1000;            
+
+       diffx = smoothing*diffx + (1.0-smoothing)*buffx;
+       diffy = smoothing*diffy + (1.0-smoothing)*buffy;
+       oldex = dist_X;
+       oldey = dist_Y;
+       oldtime= performance.now();
+     }
 
     
     
@@ -226,7 +292,16 @@ function closeWorker(){
   
     var data = [angles[0], angles[1], positions[0], positions[1]]
     this.self.postMessage(data);
-  
+
+    
+    fEE.x = Math.min(Math.max(P*dist_X, -4), 4) + Math.min(Math.max(I*cumerrorx, -4), 4) + Math.min(Math.max(D*diffx, -8), 8);
+    fEE.y = Math.min(Math.max(P*dist_Y, -4), 4) + Math.min(Math.max(I*cumerrory, -4), 4) + Math.min(Math.max(D*diffy, -8), 8); 
+    if (noforce==1)
+    {
+      fEE.x=0.0;
+      fEE.y=0.0;
+    }
+    // console.log(fEE.x);
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
       

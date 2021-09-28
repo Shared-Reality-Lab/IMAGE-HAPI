@@ -1,3 +1,55 @@
+var haplyBoard;
+var widgetOne;
+var pantograph;
+var worker;
+
+var widgetOneID = 5;
+var CW = 0;
+var CCW = 1;
+var renderingForce= false;
+
+/* framerate definition ************************************************************************************************/
+var baseFrameRate= 120;
+/* end framerate definition ********************************************************************************************/ 
+
+/* Screen and world setup parameters */
+var pixelsPerMeter = 4000.0;
+
+var radsPerDegree = 0.01745;
+
+/* pantagraph link parameters in meters */
+var l = 0.07; // m
+var L = 0.09; // m
+
+/* end effector radius in meters */
+var rEE = 0.006;
+var rEEContact = 0.006;
+
+var jsondata;
+
+/* task space */
+var angles                             = new p5.Vector (0,0);
+var posEE                              = new p5.Vector(0, 0);
+var posEELast                          = new p5.Vector(0, 0);
+var fEE                                = new p5.Vector(0, 0); 
+
+/* device graphical position */
+var deviceOrigin                       = new p5.Vector(0, 0);
+
+/* World boundaries reference */
+const worldPixelWidth                     = 1000;
+const worldPixelHeight                    = 650;
+
+var screenFactor_x = worldPixelWidth/pixelsPerMeter;
+var screenFactor_y = worldPixelHeight/pixelsPerMeter;
+
+var jsonFilename = "json/ex5_preprocess.json";
+
+/* graphical elements */
+var pGraph, joint, endEffector;
+var img, pg;
+
+//Class definition: extracted JSON data, the same structure;
 class DetectedObject{
   constructor(ID, type, area, centroid, dimensions) {
     this.ID = ID;
@@ -17,229 +69,238 @@ class DetectedSegment{
   }
 }
 
-function loadJSON(callback) {   
-
-  var xobj = new XMLHttpRequest();
-  xobj.overrideMimeType("application/json");
-  xobj.open('GET', jsonFilename, true); // Replace 'my_data' with the path to your file
-  xobj.onreadystatechange = function () {
-        if (xobj.readyState == 4 && xobj.status == "200") {
-          // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-          callback(xobj.responseText);
-        }
-  };
-  xobj.send(null);  
+var objectdata = [];
+var segmentationdata = [];
+var workermessage;
+//preload
+function preload()  {
+  img = loadImage('image/ex5.jpg');
 }
 
+//loading data from JSON 
 function onFileLoad()   {    
-  //console.log(jsondata);
-  let segments = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.semanticSegmentation'].segments;
-  let objects = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.objectDetection'].objects;
-  //console.log(objects);
-  //console.log(segments);
-  
-  for (let i = 0; i < objects.length; i++)  {
-      let obj = objects[i];
-      let ID = obj.ID;
-      let area = obj.area;
-      let centroid = obj.centroid;
-      let dimensions = obj.dimensions;
-      let type = obj.type;
-      objectdata.push(new DetectedObject(ID, type, area, centroid, dimensions));
-  }
-  console.log(objectdata);
-  for (let i = 0; i < segments.length; i++)  {
-      let seg = segments[i];
-      let area = seg.area;
-      let centroid = seg.centroid;
-      let coords = seg.coord;
-      let name = seg.nameOfSegment;
-      segmentationdata.push(new DetectedSegment(area, centroid, coords, name));
-  }
-  console.log(segmentationdata);
+    //console.log(jsondata);
+    let segments = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.semanticSegmentation'].segments;
+    let objects = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.objectDetection'].objects;
+    //console.log(objects);
+    //console.log(segments);
+    
+    for (let i = 0; i < objects.length; i++)  {
+        let obj = objects[i];
+        let ID = obj.ID;
+        let area = obj.area;
+        let centroid = obj.centroid;
+        let dimensions = obj.dimensions;
+        let type = obj.type;
+        objectdata.push(new DetectedObject(ID, type, area, centroid, dimensions));
+    }
+    //console.log(objectdata);
+    for (let i = 0; i < segments.length; i++)  {
+        let seg = segments[i];
+        let area = seg.area;
+        let centroid = seg.centroid;
+        let coords = seg.coord;
+        let name = seg.nameOfSegment;
+        segmentationdata.push(new DetectedSegment(area, centroid, coords, name));
+    }
+    //console.log(segmentationdata);
 }
 
-function closeWorker(){
-    console.log("worker before closing");
-    self.close();
-    console.log("worker closed");
-    var runLoop = true;
+function setup() {
+    createCanvas(1000, 650);
+    pg = createGraphics(1000, 650);
+    /* visual elements setup */
+    //background(255);
+    deviceOrigin.add(worldPixelWidth/2, 0);
+    
+    jsondata = loadJSON(jsonFilename, onFileLoad);
+
+    // loading image
+    image(img, 0, 0);
+
+    /* create pantagraph graphics */
+    create_pantagraph();
+
 }
   
-  var message = "";
-  updateMess = function(mess){
-    message = mess;
-  }
-  
-  getMessage = async function(m){
-    if( message == ""){ 
-      return "connect";
-    }
-    else{
-      return message;
-    }
+function draw() {
+  /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
+  //  if(renderingForce == false){
+      //background(255);  
+      update_animation(img, pg, this.angles.x*radsPerDegree, this.angles.y*radsPerDegree, 
+                        this.posEE.x, this.posEE.y);
+  //  }
+}
+
+
+async function workerSetup(){
+    let port = await navigator.serial.requestPort();
+    let combineddata = objectdata.concat(segmentationdata);
+    workermessage = new ArrayBuffer(combineddata)
+    //workermessage = ArrayBuffer(objectdata);
+    //console.log(workermessage);
+    worker.postMessage(jsonFilename);
+}
+
+if (window.Worker) {
+    // console.log("here");
+    worker = new Worker("hap101_worker_active.js");
+    document.getElementById("button").addEventListener("click", workerSetup);
+    worker.addEventListener("message", function(msg){
+        //retrieve data from worker.js needed for update_animation()
+        //TODO: find a more elegant way to retrieve the variables
+        angles.x = msg.data[0];
+        angles.y = msg.data[1];
+        posEE.x = msg.data[2];
+        posEE.y = msg.data[3];
+    });
+    
+}
+else {
+    console.log("oops!");
+}
+
+/* helper functions section, place helper functions here ***************************************************************/
+function create_pantagraph(){
+    var rEEAni = pixelsPerMeter * rEE;
+    // endEffector = beginShape(ELLIPSE, deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni);
+  endEffector = ellipse(deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni)
     
   }
-
-  self.onmessage = function handleMessageFromMain(msg) {
-    //console.log("message from main received in worker:", msg);
-  
-    jsonFilename = msg.data;
-    //console.log(bufFromMain);
+    
+function create_wall(x1, y1, x2, y2){
+    x1 = pixelsPerMeter * x1 * (screenFactor_x);
+    y1 = pixelsPerMeter * y1 * (screenFactor_y);
+    x2 = pixelsPerMeter * x2 * (screenFactor_x);
+    y2 = pixelsPerMeter * y2 * (screenFactor_y);
+    
+    // return beginShape(LINE, deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y+y2);
+  return pg.line(x1, y1, x2, y2);
   }
 
-  /* setting up Haply variables */
-  var counter = 0;
-  var msgcount = 0;
-  var runLoop=true
-  var widgetOne;
-  var pantograph;
-  var worker;
-  
-  var widgetOneID = 5;
-  self.importScripts("libraries/vector.js");
+function create_circle(x1, y1, rad)   {
+  x1 = pixelsPerMeter * x1 * (screenFactor_x);
+  y1 = pixelsPerMeter * y1 * (screenFactor_y);
+  rad = pixelsPerMeter * rad * (screenFactor_x);
+  return pg.ellipse(x1, y1, rad, rad);
+}
+ 
+function create_rect(x1, y1, x2, y2)   {
+  x1 = pixelsPerMeter * x1 * (screenFactor_x);
+  y1 = pixelsPerMeter * y1 * (screenFactor_y);
+  x2 = pixelsPerMeter * x2 * (screenFactor_x);
+  y2 = pixelsPerMeter * y2 * (screenFactor_y);
+  //console.log (x1, y1, x2, y2);
+  return pg.rect(x1, y1, (x2-x1), (y2-y1));
+}
 
-/* Force rendering variables*/
-  var angles = new Vector(0,0);      
-  var positions = new Vector(0,0);
-  
-  /* task space */
-  var posEE = new Vector(0,0);   
-  var posEE_copy = new Vector(0,0);
-  var posEELast = new Vector(0,0) ; 
-  var posObject;  
-  var posEEToObject;
-  var posEEToObjectMagnitude;
-  
-  //var velEEToBall;
-  //var velEEToBallMagnitude;
-  
-  var rEE = 0.006;
-  var rEEContact = 0.006;
-  
-  //var rBall = 0.02;
-  
-  var dt = 1/1000.0;
-  
-  var fObject = new Vector(0 ,0);    
-  var fContact = new Vector(0, 0);
-  var fDamping = new Vector(0, 0);
-
-  /* virtual wall parameters */
-  var fWall = new Vector(0, 0);
-  var kWall = 800; // N/m
-  var bWall = 2; // kg/s
-  var penWall = new Vector(0, 0);
-  
-  //var posWallLeft = new Vector(-0.07, 0.03);
-  //var posWallRight = new Vector(0.07, 0.03);
-  //var posWallBottom = new Vector(0.0, 0.1);
-  
-  var box_leftwall = new Vector(0, 0);
-  var box_rightwall = new Vector(0, 0);
-  var box_topwall = new Vector(0, 0);
-  var box_bottomwall = new Vector (0, 0);
-  var box_center = new Vector(0,0);
-
-  var haplyBoard;
-  
-  var jsonFilename;
-  var jsondata;
-  var objectdata = [];
-  var segmentationdata = [];
-
-  self.addEventListener("message", async function(e) {
-  
-    /**************IMPORTING HAPI FILES*****************/
-  
-    self.importScripts("libraries/Board.js");
-    self.importScripts("libraries/Actuator.js");
-    self.importScripts("libraries/Sensor.js");
-    self.importScripts("libraries/Pwm.js");
-    self.importScripts("libraries/Device.js");
-    self.importScripts("libraries/Pantograph.js");
-    
-  
-  
-    /************ BEGIN SETUP CODE *****************/
-    //console.log('in worker');
-    haplyBoard = new Board();
-    await haplyBoard.init();
-    //console.log(haplyBoard);
-  
-    widgetOne           = new Device(widgetOneID, haplyBoard);
-    pantograph          = new Pantograph();
-  
-    widgetOne.set_mechanism(pantograph);
-  
-    widgetOne.add_actuator(1, 1, 2); //CCW
-    widgetOne.add_actuator(2, 0, 1); //CW
-    
-    widgetOne.add_encoder(1, 1, 241, 10752, 2);
-    widgetOne.add_encoder(2, 0, -61, 10752, 1);
-  
-    var run_once = false;
-    //var g = new Vector(10, 20, 2);
-    widgetOne.device_set_parameters();
-  
-    /************************ END SETUP CODE ************************* */
-     
-
-    /**********  BEGIN CONTROL LOOP CODE *********************/
-    // self.importScripts("runLoop.js")
-    while(true){
-  
-      if (!run_once)
-      {
-        //loading JSON
-        widgetOne.device_set_parameters();
-        run_once = true;
-        loadJSON(function(response) {
-          // Parse JSON string into object
-            jsondata = JSON.parse(response);
-            console.log(jsondata);
-            onFileLoad();
-         });
+function update_animation(img, pg, th1, th2, xE, yE){
+    var rec = [];
+    /* object bounding boxes */
+    for (let i = 0; i < objectdata.length; i++) {
+        let ulx = objectdata[i].dimensions[0];
+        let uly = objectdata[i].dimensions[1];
+        let lrx = objectdata[i].dimensions[2];
+        let lry = objectdata[i].dimensions[3];
+        pg.stroke(color(255,0,0));
+        pg.fill(255, 0);
+        rec[i] = create_rect(ulx,uly,lrx,lry);
         
-      }
-  
-      widgetOne.device_read_data();
-      angles = widgetOne.get_device_angles();
-      positions = widgetOne.get_device_position(angles);
-      posEE.set(positions);  
-      posEELast = posEE;
-  
-    /* haptic physics force calculation */
-    /* wall force calculation*/
-    fWall.set(0, 0);
-    
-    /* centroid force */
-    //RI SG
-
-    
-    
-    /* sum of forces */
-    fEE = (fContact.clone()).multiply(-1);
-    // fEE.set(graphics_to_device(fEE));
-    /* end sum of forces */
-  
-  
-    var data = [angles[0], angles[1], positions[0], positions[1]]
-    this.self.postMessage(data);
-  
-    widgetOne.set_device_torques(fEE.toArray());
-    widgetOne.device_write_torques();
-      
-    renderingForce = false;    
-  
-      // run every 1 ms
-      await new Promise(r => setTimeout(r, 1));
+        //left
+        //lines[4*i] = create_wall(ulx, uly, ulx, lry);
+        //right
+        //lines[4*i+1] = create_wall(lrx, uly, lrx, lry);
+        //top
+        //lines[4*i+2] = create_wall(ulx, uly, lrx, uly);
+        //bottom
+        //lines[4*i+3] = create_wall(ulx, lry, lrx, lry);        
     }
+    //pg.fill(255);
+    /* centroids */
+    for (let i = 0; i < segmentationdata.length; i++) {
+      var circs = [];
+      pg.stroke(color(0,0,255));
+      pg.fill(255,255);    
+      let x = segmentationdata[i].centroid[0];
+      let y = segmentationdata[i].centroid[1];
+      circs[i] = create_circle(x, y, 0.02);
+      //console.log(polygons[i]);    
+    }
+    /* semantic segmentation contour */
+    for (let i = 0; i < segmentationdata.length; i++) {
+      var polygons = [];
+      pg.stroke(color(0,255-i*50, i*50)); 
+      pg.fill(255, 0);   
+      //polygons[i] = pg.beginShape(LINES);
+      //console.log(segmentationdata[i].coords.length);
+      for (let j = 0; j < segmentationdata[i].coords.length; j++)  {
+        //let x = segmentationdata[i].coords[j][0] * pixelsPerMeter * screenFactor_x;
+        //let y = segmentationdata[i].coords[j][1] * pixelsPerMeter * screenFactor_y;
+
+        //console.log(x,y);
+        //polygons[i].vertex(x, y);
+      }
+      //polygons[i].endShape(CLOSE);
+      //console.log(polygons[i]);    
+    }
+
+    /* End effector */
+    th1 = angles.x * (3.14 / 180);
+    th2 = angles.y * (3.14 / 180);
+    xE = posEE.x;
+    yE = posEE.y;
+
+    xE = pixelsPerMeter * -xE;
+    yE = pixelsPerMeter * yE;
+
+    th1 = 3.14 - th1;
+    th2 = 3.14 - th2;
+
+    //var lAni = pixelsPerMeter * l;
+    //var LAni = pixelsPerMeter * L;
+    var rEEAni = pixelsPerMeter * rEE;
+
+    //joint = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
+    //joint.stroke(color(0));
+
+    //var v0x = deviceOrigin.x;
+    //var v0y = deviceOrigin.y;
+    //var v1x = deviceOrigin.x + lAni*cos(th1);
+    //var v1y = deviceOrigin.y + lAni*sin(th1);
+    //var v2x = deviceOrigin.x + xE;
+    //var v2y = deviceOrigin.y + yE;
+    //var v3x = deviceOrigin.x + lAni*cos(th2);
+    //var v3y = deviceOrigin.y + lAni*sin(th2);
+
+   // background(255);
+    // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
+    //this.pGraph = beginShape();
+    // this.pGraph.vertex(v0x, v0y);
+    // this.pGraph.vertex(v1x, v1y);
+    // this.pGraph.vertex(v2x, v2y);
+    // this.pGraph.vertex(v3x, v3y);
     
-    /**********  END CONTROL LOOP CODE *********************/
-  });
+    //this.pGraph.endShape(CLOSE);
+    //translate(xE, yE);
+    
+    pg.stroke(color(64,128,64));
+    pg.fill(255, 0);
+    endEffector = pg.ellipse(deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni);
+    endEffector.beginShape();
+    endEffector.endShape();
+    //pg.fill(255);
+
+    image(img, 0,0, 1000, 650);
+    image(pg, 0,0);
+  }
   
   
+function device_to_graphics(deviceFrame){
+    return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
+  }
   
   
-  
+function graphics_to_device(graphicsFrame){
+    return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
+  }
+  /* end helper function ****************************************************************************************/
