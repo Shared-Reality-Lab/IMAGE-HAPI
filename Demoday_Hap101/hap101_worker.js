@@ -1,9 +1,70 @@
+class DetectedObject{
+  constructor(ID, type, area, centroid, dimensions) {
+    this.ID = ID;
+    this.type = type;
+    this.area = area;
+    this.centroid = centroid;
+    this.dimensions = dimensions;
+  }
+}
+
+class DetectedSegment{
+  constructor(area, centroid, coords, name) {
+    this.area = area;
+    this.centroid = centroid;
+    this.coords = coords;
+    this.name = name;
+  }
+}
+
+function loadJSON(callback) {   
+
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.open('GET', jsonFilename, true); // Replace 'my_data' with the path to your file
+  xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+          // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+          callback(xobj.responseText);
+        }
+  };
+  xobj.send(null);  
+}
+
+function onFileLoad()   {    
+  //console.log(jsondata);
+  let segments = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.semanticSegmentation'].segments;
+  let objects = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.objectDetection'].objects;
+  //console.log(objects);
+  //console.log(segments);
+  
+  for (let i = 0; i < objects.length; i++)  {
+      let obj = objects[i];
+      let ID = obj.ID;
+      let area = obj.area;
+      let centroid = obj.centroid;
+      let dimensions = obj.dimensions;
+      let type = obj.type;
+      objectdata.push(new DetectedObject(ID, type, area, centroid, dimensions));
+  }
+  console.log(objectdata);
+  for (let i = 0; i < segments.length; i++)  {
+      let seg = segments[i];
+      let area = seg.area;
+      let centroid = seg.centroid;
+      let coords = seg.coord;
+      let name = seg.nameOfSegment;
+      segmentationdata.push(new DetectedSegment(area, centroid, coords, name));
+  }
+  console.log(segmentationdata);
+}
+
 function closeWorker(){
     console.log("worker before closing");
     self.close();
     console.log("worker closed");
     var runLoop = true;
-  }
+}
   
   var message = "";
   updateMess = function(mess){
@@ -19,7 +80,14 @@ function closeWorker(){
     }
     
   }
+
+  self.onmessage = function handleMessageFromMain(msg) {
+    //console.log("message from main received in worker:", msg);
   
+    jsonFilename = msg.data;
+    //console.log(bufFromMain);
+  }
+
   /* setting up Haply variables */
   var counter = 0;
   var msgcount = 0;
@@ -75,10 +143,14 @@ function closeWorker(){
 
   var haplyBoard;
   
+  var jsonFilename;
+  var jsondata;
+  var objectdata = [];
+  var segmentationdata = [];
+
   self.addEventListener("message", async function(e) {
   
     /**************IMPORTING HAPI FILES*****************/
-  
   
     self.importScripts("libraries/Board.js");
     self.importScripts("libraries/Actuator.js");
@@ -90,10 +162,10 @@ function closeWorker(){
   
   
     /************ BEGIN SETUP CODE *****************/
-    console.log('in worker');
+    //console.log('in worker');
     haplyBoard = new Board();
     await haplyBoard.init();
-    console.log(haplyBoard);
+    //console.log(haplyBoard);
   
     widgetOne           = new Device(widgetOneID, haplyBoard);
     pantograph          = new Pantograph();
@@ -119,8 +191,16 @@ function closeWorker(){
   
       if (!run_once)
       {
+        //loading JSON
         widgetOne.device_set_parameters();
         run_once = true;
+        loadJSON(function(response) {
+          // Parse JSON string into object
+            jsondata = JSON.parse(response);
+            console.log(jsondata);
+            onFileLoad();
+         });
+        
       }
   
       widgetOne.device_read_data();
@@ -130,14 +210,13 @@ function closeWorker(){
       posEELast = posEE;
   
     /* haptic physics force calculation */
-    /* box force */
-    //YY
-      
+    /* wall force calculation*/
+    fWall.set(0, 0);
+    
     /* centroid force */
     //RI SG
 
-    /* wall force calculation*/
-    fWall.set(0, 0);
+    
     
     /* sum of forces */
     fEE = (fContact.clone()).multiply(-1);

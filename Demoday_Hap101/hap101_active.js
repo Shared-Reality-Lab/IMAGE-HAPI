@@ -43,8 +43,6 @@ const worldPixelHeight                    = 650;
 var screenFactor_x = worldPixelWidth/pixelsPerMeter;
 var screenFactor_y = worldPixelHeight/pixelsPerMeter;
 
-var jsonFilename = "json/ex5_preprocess.json";
-
 /* graphical elements */
 var pGraph, joint, endEffector;
 var img, pg;
@@ -71,7 +69,7 @@ class DetectedSegment{
 
 var objectdata = [];
 var segmentationdata = [];
-var workermessage;
+
 //preload
 function preload()  {
   img = loadImage('image/ex5.jpg');
@@ -83,7 +81,7 @@ function onFileLoad()   {
     let segments = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.semanticSegmentation'].segments;
     let objects = jsondata.preprocessors['ca.mcgill.a11y.image.preprocessor.objectDetection'].objects;
     //console.log(objects);
-    //console.log(segments);
+    console.log(segments);
     
     for (let i = 0; i < objects.length; i++)  {
         let obj = objects[i];
@@ -94,7 +92,7 @@ function onFileLoad()   {
         let type = obj.type;
         objectdata.push(new DetectedObject(ID, type, area, centroid, dimensions));
     }
-    //console.log(objectdata);
+    console.log(objectdata);
     for (let i = 0; i < segments.length; i++)  {
         let seg = segments[i];
         let area = seg.area;
@@ -103,7 +101,7 @@ function onFileLoad()   {
         let name = seg.nameOfSegment;
         segmentationdata.push(new DetectedSegment(area, centroid, coords, name));
     }
-    //console.log(segmentationdata);
+    console.log(segmentationdata);
 }
 
 function setup() {
@@ -113,7 +111,7 @@ function setup() {
     //background(255);
     deviceOrigin.add(worldPixelWidth/2, 0);
     
-    jsondata = loadJSON(jsonFilename, onFileLoad);
+    jsondata = loadJSON('json/ex5_preprocess.json', onFileLoad);
 
     // loading image
     image(img, 0, 0);
@@ -121,25 +119,21 @@ function setup() {
     /* create pantagraph graphics */
     create_pantagraph();
 
-}
+  }
   
-function draw() {
-  /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  //  if(renderingForce == false){
-      //background(255);  
-      update_animation(img, pg, this.angles.x*radsPerDegree, this.angles.y*radsPerDegree, 
-                        this.posEE.x, this.posEE.y);
-  //  }
-}
+   function draw() {
+     /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
+     //  if(renderingForce == false){
+         //background(255);  
+         update_animation(img, pg, this.angles.x*radsPerDegree, this.angles.y*radsPerDegree, 
+                            this.posEE.x, this.posEE.y);
+     //  }
+   }
 
 
 async function workerSetup(){
     let port = await navigator.serial.requestPort();
-    let combineddata = objectdata.concat(segmentationdata);
-    workermessage = new ArrayBuffer(combineddata)
-    //workermessage = ArrayBuffer(objectdata);
-    //console.log(workermessage);
-    worker.postMessage(jsonFilename);
+    worker.postMessage("test");
 }
 
 if (window.Worker) {
