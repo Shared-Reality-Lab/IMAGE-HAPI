@@ -13,7 +13,7 @@ var baseFrameRate= 120;
 /* end framerate definition ********************************************************************************************/ 
 
 /* Screen and world setup parameters */
-var pixelsPerMeter = 4000.0;
+var pixelsPerMeter = 5000.0;
 
 var radsPerDegree = 0.01745;
 
@@ -22,8 +22,8 @@ var l = 0.07; // m
 var L = 0.09; // m
 
 /* end effector radius in meters */
-var rEE = 0.006;
-var rEEContact = 0.006;
+var rEE = 0.005;
+var rEEContact = 0.005;
 
 var jsondata;
 
@@ -37,8 +37,8 @@ var fEE                                = new p5.Vector(0, 0);
 var deviceOrigin                       = new p5.Vector(0, 0);
 
 /* World boundaries reference */
-const worldPixelWidth                     = 1000;
-const worldPixelHeight                    = 650;
+const worldPixelWidth                     = 950;
+const worldPixelHeight                    = 600;
 
 var screenFactor_x = worldPixelWidth/pixelsPerMeter;
 var screenFactor_y = worldPixelHeight/pixelsPerMeter;
@@ -47,7 +47,7 @@ var jsonFilename = "json/ex5_preprocess.json";
 
 /* graphical elements */
 var pGraph, joint, endEffector;
-var img, pg;
+var img, pg, curso;
 
 //Class definition: extracted JSON data, the same structure;
 class DetectedObject{
@@ -107,8 +107,9 @@ function onFileLoad()   {
 }
 
 function setup() {
-    createCanvas(1000, 650);
-    pg = createGraphics(1000, 650);
+    createCanvas(950, 720);
+    pg = createGraphics(950, 600);
+    curso = createGraphics(950, 720);
     /* visual elements setup */
     //background(255);
     deviceOrigin.add(worldPixelWidth/2, 0);
@@ -116,7 +117,7 @@ function setup() {
     jsondata = loadJSON(jsonFilename, onFileLoad);
 
     // loading image
-    image(img, 0, 0);
+    //image(img, 0, 0);
 
     /* create pantagraph graphics */
     create_pantagraph();
@@ -164,7 +165,7 @@ else {
 function create_pantagraph(){
     var rEEAni = pixelsPerMeter * rEE;
     // endEffector = beginShape(ELLIPSE, deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni);
-  endEffector = ellipse(deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni)
+  endEffector = curso.ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
     
   }
     
@@ -195,8 +196,9 @@ function create_rect(x1, y1, x2, y2)   {
 }
 
 function update_animation(img, pg, th1, th2, xE, yE){
-    var rec = [];
+    
     /* object bounding boxes */
+    var rec = [];
     for (let i = 0; i < objectdata.length; i++) {
         let ulx = objectdata[i].dimensions[0];
         let uly = objectdata[i].dimensions[1];
@@ -206,14 +208,7 @@ function update_animation(img, pg, th1, th2, xE, yE){
         pg.fill(255, 0);
         rec[i] = create_rect(ulx,uly,lrx,lry);
         
-        //left
-        //lines[4*i] = create_wall(ulx, uly, ulx, lry);
-        //right
-        //lines[4*i+1] = create_wall(lrx, uly, lrx, lry);
-        //top
-        //lines[4*i+2] = create_wall(ulx, uly, lrx, uly);
-        //bottom
-        //lines[4*i+3] = create_wall(ulx, lry, lrx, lry);        
+
     }
     //pg.fill(255);
     /* centroids */
@@ -256,7 +251,7 @@ function update_animation(img, pg, th1, th2, xE, yE){
     th1 = 3.14 - th1;
     th2 = 3.14 - th2;
 
-    //var lAni = pixelsPerMeter * l;
+    var lAni = pixelsPerMeter * l;
     //var LAni = pixelsPerMeter * L;
     var rEEAni = pixelsPerMeter * rEE;
 
@@ -275,23 +270,28 @@ function update_animation(img, pg, th1, th2, xE, yE){
    // background(255);
     // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
     //this.pGraph = beginShape();
-    // this.pGraph.vertex(v0x, v0y);
-    // this.pGraph.vertex(v1x, v1y);
-    // this.pGraph.vertex(v2x, v2y);
-    // this.pGraph.vertex(v3x, v3y);
+     //this.pGraph.vertex(v0x, v0y);
+     //this.pGraph.vertex(v1x, v1y);
+     //this.pGraph.vertex(v2x, v2y);
+     //this.pGraph.vertex(v3x, v3y);
     
     //this.pGraph.endShape(CLOSE);
-    //translate(xE, yE);
     
-    pg.stroke(color(64,128,64));
-    pg.fill(255, 0);
-    endEffector = pg.ellipse(deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni);
+    curso.clear();
+    curso.stroke(color(0));
+    //curso.translate(xE, yE);
+    curso.background(255, 0);
+    curso.fill(255, 255);
+    //console.log(xE, yE);
+    endEffector = curso.ellipse(deviceOrigin.x+xE, deviceOrigin.y+yE, rEEAni, rEEAni);
+    
     endEffector.beginShape();
     endEffector.endShape();
     //pg.fill(255);
 
-    image(img, 0,0, 1000, 650);
-    image(pg, 0,0);
+    image(img, 0, 120, 950, 600);
+    image(pg, 0, 120, 950, 600);
+    image(curso, 0, 0);
   }
   
   

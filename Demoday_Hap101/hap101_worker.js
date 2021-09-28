@@ -114,8 +114,8 @@ function closeWorker(){
   //var velEEToBall;
   //var velEEToBallMagnitude;
   
-  var rEE = 0.006;
-  var rEEContact = 0.006;
+  var rEE = 0.005;
+  var rEEContact = 0.005;
   
   //var rBall = 0.02;
   
@@ -127,7 +127,7 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 800; // N/m
+  var kWall = 150; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
   
@@ -147,6 +147,14 @@ function closeWorker(){
   var jsondata;
   var objectdata = [];
   var segmentationdata = [];
+
+  var pixelsPerMeter = 5000;
+  var worldPixelWidth = 950;
+  var worldPixelHeight = 600;
+
+  var screenFactor_x = worldPixelWidth/pixelsPerMeter;
+  var screenFactor_y = worldPixelHeight/pixelsPerMeter;
+
 
   self.addEventListener("message", async function(e) {
   
@@ -179,7 +187,6 @@ function closeWorker(){
     widgetOne.add_encoder(2, 0, -61, 10752, 1);
   
     var run_once = false;
-    //var g = new Vector(10, 20, 2);
     widgetOne.device_set_parameters();
   
     /************************ END SETUP CODE ************************* */
@@ -197,7 +204,7 @@ function closeWorker(){
         loadJSON(function(response) {
           // Parse JSON string into object
             jsondata = JSON.parse(response);
-            console.log(jsondata);
+            //console.log(jsondata);
             onFileLoad();
          });
         
@@ -208,33 +215,106 @@ function closeWorker(){
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
       posEELast = posEE;
-  
-    /* haptic physics force calculation */
-    /* wall force calculation*/
-    fWall.set(0, 0);
-    
-    /* centroid force */
-    //RI SG
-
-    
-    
-    /* sum of forces */
-    fEE = (fContact.clone()).multiply(-1);
-    // fEE.set(graphics_to_device(fEE));
-    /* end sum of forces */
-  
-  
-    var data = [angles[0], angles[1], positions[0], positions[1]]
-    this.self.postMessage(data);
-  
-    widgetOne.set_device_torques(fEE.toArray());
-    widgetOne.device_write_torques();
+      //console.log(posEE.x, posEE.y);
+      /* position conversion */
+      /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
+         workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
       
-    renderingForce = false;    
-  
-      // run every 1 ms
-      await new Promise(r => setTimeout(r, 1));
-    }
+      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.018) / 0.094);
+
+      /* haptic physics force calculation */
+      /* find the nearest line segment */
+      // initial value as VERY LARGE one
+      var nearestx = 999;
+      var nearesty = 999;
+      var x_line;
+      var y_line;
+      for(let i = 0; i < objectdata.length; i++)  {
+        let ulx = objectdata[i].dimensions[0];
+        let uly = objectdata[i].dimensions[1];
+        let lrx = objectdata[i].dimensions[2];
+        let lry = objectdata[i].dimensions[3]; 
+        
+        /* to find minimum distance line segment */
+        /* x direction */
+        /* if y coord is between line seg */
+        console.log(ulx, uly, lrx, lry, conv_posEE.x, conv_posEE.y);
+        if (conv_posEE.y < lry && conv_posEE.y > uly) {
+          //check distance between vertical lines;
+          var x_dist1 = Math.abs(ulx - conv_posEE.x);
+          var x_dist2 = Math.abs(lrx - conv_posEE.x);
+          if (x_dist1 < x_dist2 && x_dist1 < nearestx)  {
+              x_line = ulx;
+              nearestx = x_dist1;
+          }
+          else if (x_dist2 < x_dist1 && x_dist2 < nearestx) {
+              x_line = lrx;
+              nearestx = x_dist2;
+          }
+        }
+        /* y direction, the same method */
+        if (conv_posEE.x > ulx && conv_posEE.x < lrx) {
+          //check distance between vertical lines;
+          var y_dist1 = Math.abs(uly - conv_posEE.y);
+          var y_dist2 = Math.abs(lry - conv_posEE.y);
+          if (y_dist1 < y_dist2 && y_dist1 < nearesty)  {
+              y_line = uly;
+              nearesty = y_dist1;
+          }
+          else if (y_dist2 < y_dist1 && y_dist2 < nearesty) {
+              y_line = lry;
+              nearesty = y_dist2;
+          }
+        }
+      }
+
+
+      fWall.set(0, 0);
+      var penWall = new Vector(0,0);
+      var threshold = 0.02;
+      if (nearestx < nearesty && nearestx < threshold)  {
+        if(x_line < conv_posEE.x) {
+          penWall.set(-kWall* (x_line - (conv_posEE.x + rEE)), 0);
+        }
+        else{
+          penWall.set(-kWall* (x_line - (conv_posEE.x - rEE)), 0);
+        }
+        
+        fWall = penWall;
+      }
+      else if (nearesty < nearestx && nearesty < threshold){
+        if(y_line < conv_posEE.y) {
+          penWall.set(0, kWall*(y_line - (conv_posEE.y + rEE)));
+        }
+        else{
+          penWall.set(0, kWall*(y_line - (conv_posEE.y - rEE)));
+        }
+        
+        fWall = penWall;
+      }
+      fEE = (fWall.clone()).multiply(-1);
+      //fEE.set(graphics_to_device(fEE));
+      /* end sum of forces */
+    
+
+       
+      /* rendering the force within distance threshold */
+      
+      
+      
+      
+      //console.log(nearestx, nearesty);
+      var data = [angles[0], angles[1], positions[0], positions[1]];
+      this.self.postMessage(data);
+    
+      widgetOne.set_device_torques(fEE.toArray());
+      widgetOne.device_write_torques();
+        
+      renderingForce = false;    
+    
+        // run every 1 ms
+        await new Promise(r => setTimeout(r, 1));
+      }
     
     /**********  END CONTROL LOOP CODE *********************/
   });
