@@ -195,9 +195,10 @@ function closeWorker(){
     var oldtime = 0;
     var timetaken = 0;
     var looptime = 500;
+    var looptiming = 0;
     var x_m, y_m;
-    var xr = -0.48;;
-    var yr = -0.48;
+    var xr = 0.4;;
+    var yr = 0.1;
     var cumerrorx = 0;
     var cumerrory = 0;
     var oldex = 0;
@@ -209,7 +210,7 @@ function closeWorker(){
     var smoothing = 0.80;
     var P = 0.12;
     var I =0;
-    var D = 0.5;
+    var D = 0;
     while(true){
         let starttime = performance.now();
         let  timesincelastloop=starttime-this.timetaken;
@@ -222,7 +223,7 @@ function closeWorker(){
           let freq = 1000.0/(starttime-looptiming)*1000000.0;
           console.debug("loop running at "  + freq + " kHz");
           iter=0;
-          let looptiming=starttime;
+          looptiming=starttime;
         }
     
         let timetaken=starttime;
@@ -300,7 +301,7 @@ function closeWorker(){
       fEE.x=0.0;
       fEE.y=0.0;
     }
-    console.log(fEE.x);
+    // console.log(fEE.x);
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
       
