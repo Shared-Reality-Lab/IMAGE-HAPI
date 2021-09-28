@@ -186,8 +186,27 @@ function closeWorker(){
      
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
+
     // self.importScripts("runLoop.js")
+    let iter =0;
+    let oldtime = 0;
     while(true){
+        let starttime = System.nanoTime();
+        let  timesincelastloop=starttime-timetaken;
+        iter+= 1;
+        // we check the loop is running at the desired speed (with 10% tolerance)
+        if (timesincelastloop >= looptime*1000*1.1) {
+          let freq = 1.0/timesincelastloop*1000000.0;
+          println("caution, freq droped to: "+freq + " kHz");
+        } else if (iter >= 1000) {
+          let freq = 1000.0/(starttime-looptiming)*1000000.0;
+          println("loop running at "  + freq + " kHz");
+          iter=0;
+          let looptiming=starttime;
+        }
+    
+        let timetaken=starttime;
+    
   
       if (!run_once)
       {
@@ -204,17 +223,43 @@ function closeWorker(){
       }
   
       widgetOne.device_read_data();
+      noforce = 0;
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
       posEELast = posEE;
+      /** Draw circle path */
+      //xr = (cx + circleRadius*sin((float)(millis())/1000.0 * radpers));
+      //yr = (cy + circleRadius*cos((float)(millis())/1000.0 * radpers));
+      x_m = xr*300; 
+      y_m = yr*300+350;//mouseY;
   
     /* haptic physics force calculation */
-    /* wall force calculation*/
-    fWall.set(0, 0);
+  
     
     /* centroid force */
     //RI SG
+     // Torques from difference in endeffector and setpoint, set gain, calculate force
+     let xE = pixelsPerMeter * posEE.x;
+     let yE = pixelsPerMeter * posEE.y;
+     let timedif =  window.performance.now()-oldtime;
+
+     let dist_X = x_m-xE;
+     cumerrorx += dist_X*timedif*0.000000001;
+     let dist_Y = y_m-yE;
+     cumerrory += dist_Y*timedif*0.000000001;
+     //println(dist_Y*k + " " +dist_Y*k);
+     // println(timedif);
+     if (timedif > 0) {
+       buffx = (dist_X-oldex)/timedif*1000*1000;
+       buffy = (dist_Y-oldey)/timedif*1000*1000;            
+
+       diffx = smoothing*diffx + (1.0-smoothing)*buffx;
+       diffy = smoothing*diffy + (1.0-smoothing)*buffy;
+       oldex = dist_X;
+       oldey = dist_Y;
+       oldtime= window.performance.now();
+     }
 
     
     
@@ -226,6 +271,13 @@ function closeWorker(){
   
     var data = [angles[0], angles[1], positions[0], positions[1]]
     this.self.postMessage(data);
+    fEE.x = constrain(P*dist_X, -4, 4) + constrain(I*cumerrorx, -4, 4) + constrain(D*diffx, -8, 8);
+    fEE.y = constrain(P*dist_Y, -4, 4) + constrain(I*cumerrory, -4, 4) + constrain(D*diffy, -8, 8); 
+    if (noforce==1)
+    {
+      fEE.x=0.0;
+      fEE.y=0.0;
+    }
   
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
