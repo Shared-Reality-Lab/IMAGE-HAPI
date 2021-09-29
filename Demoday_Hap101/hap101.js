@@ -13,7 +13,7 @@ var baseFrameRate= 120;
 /* end framerate definition ********************************************************************************************/ 
 
 /* Screen and world setup parameters */
-var pixelsPerMeter = 6000.0;
+var pixelsPerMeter = 8000.0;
 
 var radsPerDegree = 0.01745;
 
@@ -107,9 +107,9 @@ function onFileLoad()   {
 }
 
 function setup() {
-    createCanvas(950, 720);
+    createCanvas(950, 750);
     pg = createGraphics(950, 600);
-    curso = createGraphics(950, 720);
+    curso = createGraphics(950, 750);
     /* visual elements setup */
     //background(255);
     deviceOrigin.add(worldPixelWidth/2, 0);
@@ -289,8 +289,8 @@ function update_animation(img, pg, th1, th2, xE, yE){
     endEffector.endShape();
     //pg.fill(255);
 
-    image(img, 0, 120, 950, 600);
-    image(pg, 0, 120, 950, 600);
+    image(img, 0, 150, 950, 600);
+    image(pg, 0, 150, 950, 600);
     image(curso, 0, 0);
   }
   

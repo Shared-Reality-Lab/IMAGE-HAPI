@@ -145,7 +145,7 @@ function closeWorker(){
   var objectdata = [];
   var segmentationdata = [];
 
-  var pixelsPerMeter = 6000;
+  var pixelsPerMeter = 8000;
   var worldPixelWidth = 950;
   var worldPixelHeight = 600;
 
@@ -212,12 +212,14 @@ function closeWorker(){
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
       posEELast = posEE;
-      //console.log(posEE.x, posEE.y);
+      console.log(posEE.x, posEE.y);
       /* position conversion */
       /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
+      /* 0.022 to 0.090, y changed!
          workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
-      //fine-tuned about y axis.
-      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.02) / 0.094);
+      /* It varies! what the... */
+      //fine-tuned.
+      var conv_posEE = new Vector(posEE.x * (-0.5/0.060) + 0.5, (posEE.y- 0.022) / 0.068);
 
       /* haptic physics force calculation */
       /* find the nearest line segment */
@@ -235,7 +237,7 @@ function closeWorker(){
         /* to find minimum distance line segment */
         /* x direction */
         /* if y coord is between line seg */
-        console.log(ulx, uly, lrx, lry, conv_posEE.x, conv_posEE.y);
+        //console.log(ulx, uly, lrx, lry, conv_posEE.x, conv_posEE.y);
         if (conv_posEE.y < lry && conv_posEE.y > uly) {
           //check distance between vertical lines;
           var x_dist1 = Math.abs(ulx - conv_posEE.x);
