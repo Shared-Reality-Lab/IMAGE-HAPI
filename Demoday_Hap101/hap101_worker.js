@@ -273,23 +273,32 @@ function closeWorker(){
       var threshold = 0.02;
       if (nearestx < nearesty && nearestx < threshold)  {
         if(x_line < conv_posEE.x) {
-          penWall.set(-kWall* (threshold-(x_line - (conv_posEE.x))), 0);
+          penWall.set(kWall* (threshold-(x_line - (conv_posEE.x))), 0);
         }
         else{
           penWall.set(-kWall* (threshold-(x_line - (conv_posEE.x))), 0);
         }
+        if (Math.abs(conv_posEE.x - x_line) < threshold/5.0)  {
+          fWall = 0;
+        }
+        else{
+          fWall = penWall;
+        }
         
-        fWall = penWall;
       }
       else if (nearesty < nearestx && nearesty < threshold){
         if(y_line < conv_posEE.y) {
           penWall.set(0, kWall*(threshold-(y_line - (conv_posEE.y))));
         }
         else{
-          penWall.set(0, kWall*(threshold-(y_line - (conv_posEE.y))));
+          penWall.set(0, -kWall*(threshold-(y_line - (conv_posEE.y))));
         }
-        
-        fWall = penWall;
+        if (Math.abs(conv_posEE.x - x_line) < threshold/5.0)  {
+          fWall = 0;
+        }
+        else{
+          fWall = penWall;
+        }
       }
       fEE = (fWall.clone()).multiply(-1);
       //fEE.set(graphics_to_device(fEE));
