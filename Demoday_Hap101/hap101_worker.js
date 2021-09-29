@@ -106,16 +106,19 @@ function closeWorker(){
   /* task space */
   var posEE = new Vector(0,0);   
   var posEE_copy = new Vector(0,0);
-  var posEELast = new Vector(0,0) ; 
+  var posEELast = new Vector(0,0); 
   
   //var velEEToBall;
   //var velEEToBallMagnitude;
   
   var rEE = 0.005;
   var rEEContact = 0.005;
-  
-  //var rBall = 0.02;
-  
+
+  var fEE = new Vector(0, 0);
+  var fEE_prev1 = new Vector(0, 0);
+  var fEE_prev2 = new Vector(0, 0);
+  var fEE_prev3 = new Vector(0, 0);
+  var fEE_prev4 = new Vector(0, 0);
   var dt = 1/1000.0;
   
   var fObject = new Vector(0 ,0);    
@@ -124,7 +127,7 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 160; // N/m
+  var kWall = 180; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
   
@@ -132,11 +135,6 @@ function closeWorker(){
   //var posWallRight = new Vector(0.07, 0.03);
   //var posWallBottom = new Vector(0.0, 0.1);
   
-  var box_leftwall = new Vector(0, 0);
-  var box_rightwall = new Vector(0, 0);
-  var box_topwall = new Vector(0, 0);
-  var box_bottomwall = new Vector (0, 0);
-  var box_center = new Vector(0,0);
 
   var haplyBoard;
   
@@ -212,7 +210,7 @@ function closeWorker(){
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
       posEELast = posEE;
-      console.log(posEE.x, posEE.y);
+      //console.log(posEE.x, posEE.y);
       /* position conversion */
       /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
       /* 0.022 to 0.090, y changed!
@@ -273,13 +271,13 @@ function closeWorker(){
       var threshold = 0.02;
       if (nearestx < nearesty && nearestx < threshold)  {
         if(x_line < conv_posEE.x) {
-          penWall.set(kWall* (threshold-(x_line - (conv_posEE.x))), 0);
+          penWall.set(kWall* (threshold-(x_line - conv_posEE.x)), 0);
         }
         else{
-          penWall.set(-kWall* (threshold-(x_line - (conv_posEE.x))), 0);
+          penWall.set(-kWall* (threshold-(conv_posEE.x - x_line)), 0);
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/5.0)  {
-          fWall = 0;
+        if (Math.abs(conv_posEE.x - x_line) < threshold/4.0)  {
+          fWall.set(0,0);
         }
         else{
           fWall = penWall;
@@ -288,13 +286,13 @@ function closeWorker(){
       }
       else if (nearesty < nearestx && nearesty < threshold){
         if(y_line < conv_posEE.y) {
-          penWall.set(0, kWall*(threshold-(y_line - (conv_posEE.y))));
+          penWall.set(0, -kWall*(threshold-(y_line - conv_posEE.y)));
         }
         else{
-          penWall.set(0, -kWall*(threshold-(y_line - (conv_posEE.y))));
+          penWall.set(0, kWall*(threshold-(conv_posEE.y - y_line)));
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/5.0)  {
-          fWall = 0;
+        if (Math.abs(conv_posEE.x - x_line) < threshold/4.0)  {
+          fWall.set(0,0);
         }
         else{
           fWall = penWall;
@@ -302,10 +300,16 @@ function closeWorker(){
       }
       fEE = (fWall.clone()).multiply(-1);
       //fEE.set(graphics_to_device(fEE));
-      /* end sum of forces */
-    
+      
+      //force shading (weighted moving average)
 
-       
+      fEE = 0.5 * fEE + 0.25 * fEE_prev1 + 0.125 * fEE_prev2 + 0.0625 * fEE_prev3 + 0.0625 * fEE_prev4;
+
+      fEE_prev1 = fEE;
+      fEE_prev2 = fEE_prev1;
+      fEE_prev3 = fEE_prev2;
+      fEE_prev4 = fEE_prev3;
+      
       /* rendering the force within distance threshold */
       
       
