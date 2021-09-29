@@ -47,7 +47,7 @@ function onFileLoad()   {
       let type = obj.type;
       objectdata.push(new DetectedObject(ID, type, area, centroid, dimensions));
   }
-  console.log(objectdata);
+  //console.log(objectdata);
   for (let i = 0; i < segments.length; i++)  {
       let seg = segments[i];
       let area = seg.area;
@@ -56,7 +56,7 @@ function onFileLoad()   {
       let name = seg.nameOfSegment;
       segmentationdata.push(new DetectedSegment(area, centroid, coords, name));
   }
-  console.log(segmentationdata);
+  //console.log(segmentationdata);
 }
 
 function closeWorker(){
@@ -107,15 +107,14 @@ function closeWorker(){
   var posEE = new Vector(0,0);   
   var posEE_copy = new Vector(0,0);
   var posEELast = new Vector(0,0) ; 
-  var posObject;  
-  var posEEToObject;
-  var posEEToObjectMagnitude;
   
+  var force = new Vector(0, 0);
+  var fEE = new Vector(0, 0); 
   //var velEEToBall;
   //var velEEToBallMagnitude;
   
-  var rEE = 0.006;
-  var rEEContact = 0.006;
+  var rEE = 0.005;
+  var rEEContact = 0.005;
   
   //var rBall = 0.02;
   
@@ -127,12 +126,9 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 800; // N/m
+  var kWall = 200; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
-
-  var pixelsPerMeter = 4000.0;
-  var radsPerDegree = 0.01745;
   
   //var posWallLeft = new Vector(-0.07, 0.03);
   //var posWallRight = new Vector(0.07, 0.03);
@@ -150,6 +146,13 @@ function closeWorker(){
   var jsondata;
   var objectdata = [];
   var segmentationdata = [];
+
+  var pixelsPerMeter = 6000;
+  var worldPixelWidth = 950;
+  var worldPixelHeight = 600;
+
+  var screenFactor_x = worldPixelWidth/pixelsPerMeter;
+  var screenFactor_y = worldPixelHeight/pixelsPerMeter;
 
   self.addEventListener("message", async function(e) {
   
@@ -182,52 +185,31 @@ function closeWorker(){
     widgetOne.add_encoder(2, 0, -61, 10752, 1);
   
     var run_once = false;
-    //var g = new Vector(10, 20, 2);
     widgetOne.device_set_parameters();
-  
+
+    locations = [new Vector(-0.0354, 0.063866666666666665),
+      new Vector(-0.036061071399653324, 0.09530481901415183),
+      new Vector(-0.01595470939685663, 0.09663625970686075),
+      new Vector(0.021783327903592782, 0.0661987345848704),
+      new Vector(-0.022034144532448226, 0.08840344736901531),
+     ]
+
+    // use a timer to count
+    var i = -1;
+    var iter = 0;
+    function counter() {
+        if (iter++ % 2000 == 0) {
+          i++;
+        }
+        setTimeout(counter, 2000);
+    }
+
     /************************ END SETUP CODE ************************* */
      
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
-
     // self.importScripts("runLoop.js")
-    var iter =0;
-    var oldtime = 0;
-    var timetaken = 0;
-    var looptime = 500;
-    var looptiming = 0;
-    var x_m, y_m;
-    var xr = 0.4;;
-    var yr = 0.1;
-    var cumerrorx = 0;
-    var cumerrory = 0;
-    var oldex = 0;
-    var oldey = 0;
-    var buffx = 0;
-    var buffy = 0;            
-    var diffx = 0;
-    var diffy =0;
-    var smoothing = 0.80;
-    var P = 0.12;
-    var I =0;
-    var D = 0;
     while(true){
-        let starttime = performance.now();
-        let  timesincelastloop=starttime-this.timetaken;
-        iter+= 1;
-        // we check the loop is running at the desired speed (with 10% tolerance)
-        if (timesincelastloop >= looptime*1000*1.1) {
-          let freq = 1.0/timesincelastloop*1000000.0;
-          console.debug("caution, freq droped to: "+freq + " kHz");
-        } else if (iter >= 1000) {
-          let freq = 1000.0/(starttime-looptiming)*1000000.0;
-          console.debug("loop running at "  + freq + " kHz");
-          iter=0;
-          looptiming=starttime;
-        }
-    
-        let timetaken=starttime;
-    
   
       if (!run_once)
       {
@@ -237,84 +219,83 @@ function closeWorker(){
         loadJSON(function(response) {
           // Parse JSON string into object
             jsondata = JSON.parse(response);
-            console.log(jsondata);
+            //console.log(jsondata);
             onFileLoad();
          });
         
       }
   
       widgetOne.device_read_data();
-      noforce = 0;
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
-      posEE.set(positions);  
-      posEELast = posEE;
-      /** Draw circle path */
-      //xr = (cx + circleRadius*sin((float)(millis())/1000.0 * radpers));
-      //yr = (cy + circleRadius*cos((float)(millis())/1000.0 * radpers));
-      x_m = xr*300; 
-      y_m = yr*300+350;//mouseY;
-  
-    /* haptic physics force calculation */
-  
-    
-    /* centroid force */
-    //RI SG
-     // Torques from difference in endeffector and setpoint, set gain, calculate force
-     let xE = pixelsPerMeter * posEE.x;
-     let yE = pixelsPerMeter * posEE.y;
-     let timedif =  performance.now()-oldtime;
 
-     let dist_X = x_m-xE;
-     cumerrorx += dist_X*timedif*0.000000001;
-     let dist_Y = y_m-yE;
-     cumerrory += dist_Y*timedif*0.000000001;
-     //println(dist_Y*k + " " +dist_Y*k);
-     // println(timedif);
-     if (timedif > 0) {
-       buffx = (dist_X-oldex)/timedif*1000*1000;
-       buffy = (dist_Y-oldey)/timedif*1000*1000;            
-
-       diffx = smoothing*diffx + (1.0-smoothing)*buffx;
-       diffy = smoothing*diffy + (1.0-smoothing)*buffy;
-       oldex = dist_X;
-       oldey = dist_Y;
-       oldtime= performance.now();
-     }
-
-    
-    
-    /* sum of forces */
-    fEE = (fContact.clone()).multiply(-1);
-    // fEE.set(graphics_to_device(fEE));
-    /* end sum of forces */
-  
-  
-    var data = [angles[0], angles[1], positions[0], positions[1]]
-    this.self.postMessage(data);
-
-    
-    fEE.x = Math.min(Math.max(P*dist_X, -4), 4) + Math.min(Math.max(I*cumerrorx, -4), 4) + Math.min(Math.max(D*diffx, -8), 8);
-    fEE.y = Math.min(Math.max(P*dist_Y, -4), 4) + Math.min(Math.max(I*cumerrory, -4), 4) + Math.min(Math.max(D*diffy, -8), 8); 
-    if (noforce==1)
-    {
-      fEE.x=0.0;
-      fEE.y=0.0;
-    }
-    // console.log(fEE.x);
-    widgetOne.set_device_torques(fEE.toArray());
-    widgetOne.device_write_torques();
+      posEE.set(device_to_graphics(positions));//-positions[0], positions[1]);  
       
-    renderingForce = false;    
-  
+      /* position conversion */
+      /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
+         workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
+
+      counter();
+
+       const interval = setInterval(function() {
+
+        //console.log(posEE);
+         
+        if (i >= locations.length)
+          // reset the force
+          fEE.set(0, 0);
+        else
+        {
+          // convert centroid coords into haply frame of reference
+          //var centroid = back(new Vector(segmentationdata[i].centroid[0], segmentationdata[i].centroid[1]));
+          //console.log(centroid);
+          //var centroid = [-0.03772676532591132, 0.060276119739146976];
+          //var centroid = new Vector(-0.0354, 0.063866666666666665);
+          var centroid = locations[i];
+
+          var conv_posEE = posEE.clone();
+          var xDiff = (conv_posEE).subtract(centroid);
+
+          force.set(xDiff.multiply(-400));
+
+          fEE.set(graphics_to_device(force));
+        }
+       }, 2000);
+
+     var data = [angles[0], angles[1], positions[0], positions[1]];
+     this.self.postMessage(data);    
+
+      widgetOne.set_device_torques(fEE.toArray());
+      widgetOne.device_write_torques();
+ 
+      renderingForce = false;    
+    
       // run every 1 ms
       await new Promise(r => setTimeout(r, 1));
-    }
+      }
     
     /**********  END CONTROL LOOP CODE *********************/
   });
-  
-  
+
+function to_world_frame(v) {
+  //return new Vector(v.x * (-0.5/0.074) + 0.5, (v.y - 0.018) / 0.094);
+  return new Vector(v.x * (-0.5/0.060) + 0.5, (v.y - 0.022) / 0.068);
+}
+
+function to_haply_frame(v) {
+  var j = (v.y * 0.068) + 0.022;
+  return new Vector(((v.x - 0.5) / (-0.5/0.060)), j);
+  //return new Vector(v.x * (-0.5/0.060) + 0.5, (v.y - 0.022) / 0.068);
+}
+
+function device_to_graphics(deviceFrame){
+  //return deviceFrame.set(-deviceFrame.x, deviceFrame.y);
+  return new Vector(-deviceFrame[0], deviceFrame[1]);
+}
+
+function graphics_to_device(graphicsFrame){
+  return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
+}
   
   
   
