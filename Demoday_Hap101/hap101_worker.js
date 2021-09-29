@@ -91,7 +91,7 @@ function closeWorker(){
   /* setting up Haply variables */
   var counter = 0;
   var msgcount = 0;
-  var runLoop=true
+  var runLoop = true;
   var widgetOne;
   var pantograph;
   var worker;
@@ -112,7 +112,6 @@ function closeWorker(){
   //var velEEToBallMagnitude;
   
   var rEE = 0.005;
-  var rEEContact = 0.005;
 
   var fEE = new Vector(0, 0);
   var fEE_prev1 = new Vector(0, 0);
@@ -127,15 +126,8 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 180; // N/m
-  var bWall = 2; // kg/s
+  var kWall = 150; // N/m
   var penWall = new Vector(0, 0);
-  
-  //var posWallLeft = new Vector(-0.07, 0.03);
-  //var posWallRight = new Vector(0.07, 0.03);
-  //var posWallBottom = new Vector(0.0, 0.1);
-  
-
   var haplyBoard;
   
   var jsonFilename;
@@ -209,7 +201,7 @@ function closeWorker(){
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
       posEE.set(positions);  
-      posEELast = posEE;
+      //posEELast = posEE;
       //console.log(posEE.x, posEE.y);
       /* position conversion */
       /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
@@ -217,13 +209,13 @@ function closeWorker(){
          workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
       /* It varies! what the... */
       //fine-tuned.
-      var conv_posEE = new Vector(posEE.x * (-0.5/0.060) + 0.5, (posEE.y- 0.022) / 0.068);
+      let conv_posEE = new Vector(posEE.x * (-0.5/0.060) + 0.5, (posEE.y- 0.022) / 0.068);
 
       /* haptic physics force calculation */
       /* find the nearest line segment */
       // initial value as VERY LARGE one
-      var nearestx = 999;
-      var nearesty = 999;
+      var nearestx = 99.9;
+      var nearesty = 99.9;
       var x_line;
       var y_line;
       for(let i = 0; i < objectdata.length; i++)  {
@@ -238,8 +230,8 @@ function closeWorker(){
         //console.log(ulx, uly, lrx, lry, conv_posEE.x, conv_posEE.y);
         if (conv_posEE.y < lry && conv_posEE.y > uly) {
           //check distance between vertical lines;
-          var x_dist1 = Math.abs(ulx - conv_posEE.x);
-          var x_dist2 = Math.abs(lrx - conv_posEE.x);
+          let x_dist1 = Math.abs((ulx-2*rEE) - conv_posEE.x);
+          let x_dist2 = Math.abs((lrx+2*rEE) - conv_posEE.x);
           if (x_dist1 < x_dist2 && x_dist1 < nearestx)  {
               x_line = ulx;
               nearestx = x_dist1;
@@ -252,8 +244,8 @@ function closeWorker(){
         /* y direction, the same method */
         if (conv_posEE.x > ulx && conv_posEE.x < lrx) {
           //check distance between vertical lines;
-          var y_dist1 = Math.abs(uly - conv_posEE.y);
-          var y_dist2 = Math.abs(lry - conv_posEE.y);
+          let y_dist1 = Math.abs((uly-2*rEE) - conv_posEE.y);
+          let y_dist2 = Math.abs((lry+2*rEE) - conv_posEE.y);
           if (y_dist1 < y_dist2 && y_dist1 < nearesty)  {
               y_line = uly;
               nearesty = y_dist1;
@@ -266,9 +258,8 @@ function closeWorker(){
       }
 
 
-      fWall.set(0, 0);
-      var penWall = new Vector(0,0);
-      var threshold = 0.02;
+      fWall.set(0,0);
+      let threshold = 0.02;
       if (nearestx < nearesty && nearestx < threshold)  {
         if(x_line < conv_posEE.x) {
           penWall.set(kWall* (threshold-(x_line - conv_posEE.x)), 0);
@@ -276,7 +267,7 @@ function closeWorker(){
         else{
           penWall.set(-kWall* (threshold-(conv_posEE.x - x_line)), 0);
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/4.0)  {
+        if (Math.abs(conv_posEE.x - x_line) < threshold/8.0)  {
           fWall.set(0,0);
         }
         else{
@@ -291,7 +282,7 @@ function closeWorker(){
         else{
           penWall.set(0, kWall*(threshold-(conv_posEE.y - y_line)));
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/4.0)  {
+        if (Math.abs(conv_posEE.x - x_line) < threshold/8.0)  {
           fWall.set(0,0);
         }
         else{
@@ -302,18 +293,18 @@ function closeWorker(){
       //fEE.set(graphics_to_device(fEE));
       
       //force shading (weighted moving average)
+      
+      fEE.set(0.4 * fEE.x + 0.3 * fEE_prev1.x + 0.15 * fEE_prev2.x + 0.1 * fEE_prev3.x + 0.05 * fEE_prev4.x,
+        0.4 * fEE.y + 0.3 * fEE_prev1.y + 0.15 * fEE_prev2.y + 0.1 * fEE_prev3.y + 0.05 * fEE_prev4.y);
 
-      fEE = 0.5 * fEE + 0.25 * fEE_prev1 + 0.125 * fEE_prev2 + 0.0625 * fEE_prev3 + 0.0625 * fEE_prev4;
-
-      fEE_prev1 = fEE;
-      fEE_prev2 = fEE_prev1;
-      fEE_prev3 = fEE_prev2;
-      fEE_prev4 = fEE_prev3;
+      fEE_prev1 = fEE.clone();
+      fEE_prev2 = fEE_prev1.clone();
+      fEE_prev3 = fEE_prev2.clone();
+      fEE_prev4 = fEE_prev3.clone();
       
       /* rendering the force within distance threshold */
       
-      
-      
+            
       
       //console.log(nearestx, nearesty);
       var data = [angles[0], angles[1], positions[0], positions[1]];
@@ -322,6 +313,7 @@ function closeWorker(){
       widgetOne.set_device_torques(fEE.toArray());
       widgetOne.device_write_torques();
         
+      //if(fEE.x == 0 && fEE.y == 0) 
       renderingForce = false;    
     
         // run every 1 ms
