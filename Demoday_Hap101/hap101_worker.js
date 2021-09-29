@@ -105,15 +105,13 @@ function closeWorker(){
   
   /* task space */
   var posEE = new Vector(0,0);   
-  var posEE_copy = new Vector(0,0);
   var posEELast = new Vector(0,0); 
-  
-  //var velEEToBall;
-  //var velEEToBallMagnitude;
-  
-  var rEE = 0.005;
+  var velEE = new Vector(0,0);
 
+  var b_EE = 10.0;
+  var rEE = 0.005;
   var fEE = new Vector(0, 0);
+  //for force shading
   var fEE_prev1 = new Vector(0, 0);
   var fEE_prev2 = new Vector(0, 0);
   var fEE_prev3 = new Vector(0, 0);
@@ -126,7 +124,7 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 150; // N/m
+  var kWall = 200; // N/m
   var penWall = new Vector(0, 0);
   var haplyBoard;
   
@@ -200,15 +198,14 @@ function closeWorker(){
       widgetOne.device_read_data();
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
+      posEELast = posEE;
       posEE.set(positions);  
-      //posEELast = posEE;
+      velEE = posEE.subtract(posEELast);
+      fDamping = velEE.multiply(-b_EE);
       //console.log(posEE.x, posEE.y);
-      /* position conversion */
-      /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
-      /* 0.022 to 0.090, y changed!
-         workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
-      /* It varies! what the... */
-      //fine-tuned.
+      /* position conversion relative coords = [0-1, 0-1], screen coords = 950 * 600*/
+      /* It varies! need to measure on each connection... */
+      //fine-tuned. 
       let conv_posEE = new Vector(posEE.x * (-0.5/0.060) + 0.5, (posEE.y- 0.022) / 0.068);
 
       /* haptic physics force calculation */
@@ -218,13 +215,13 @@ function closeWorker(){
       var nearesty = 99.9;
       var x_line;
       var y_line;
+      /* to find minimum distance line segment */
       for(let i = 0; i < objectdata.length; i++)  {
         let ulx = objectdata[i].dimensions[0];
         let uly = objectdata[i].dimensions[1];
         let lrx = objectdata[i].dimensions[2];
         let lry = objectdata[i].dimensions[3]; 
         
-        /* to find minimum distance line segment */
         /* x direction */
         /* if y coord is between line seg */
         //console.log(ulx, uly, lrx, lry, conv_posEE.x, conv_posEE.y);
@@ -267,7 +264,7 @@ function closeWorker(){
         else{
           penWall.set(-kWall* (threshold-(conv_posEE.x - x_line)), 0);
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/8.0)  {
+        if (Math.abs(conv_posEE.x - x_line) < rEE)  {
           fWall.set(0,0);
         }
         else{
@@ -282,7 +279,7 @@ function closeWorker(){
         else{
           penWall.set(0, kWall*(threshold-(conv_posEE.y - y_line)));
         }
-        if (Math.abs(conv_posEE.x - x_line) < threshold/8.0)  {
+        if (Math.abs(conv_posEE.x - x_line) < rEE)  {
           fWall.set(0,0);
         }
         else{
@@ -290,6 +287,8 @@ function closeWorker(){
         }
       }
       fEE = (fWall.clone()).multiply(-1);
+      fEE.add(fDamping);
+
       //fEE.set(graphics_to_device(fEE));
       
       //force shading (weighted moving average)
