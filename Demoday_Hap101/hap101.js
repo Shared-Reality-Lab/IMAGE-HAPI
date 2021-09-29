@@ -13,7 +13,7 @@ var baseFrameRate= 120;
 /* end framerate definition ********************************************************************************************/ 
 
 /* Screen and world setup parameters */
-var pixelsPerMeter = 6000.0;
+var pixelsPerMeter = 5000.0;
 
 var radsPerDegree = 0.01745;
 

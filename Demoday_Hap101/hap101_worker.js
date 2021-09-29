@@ -216,8 +216,8 @@ function closeWorker(){
       /* position conversion */
       /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
          workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
-      
-      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.018) / 0.094);
+      //fine-tuned about y axis.
+      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.022) / 0.094);
 
       /* haptic physics force calculation */
       /* find the nearest line segment */
@@ -268,23 +268,23 @@ function closeWorker(){
 
       fWall.set(0, 0);
       var penWall = new Vector(0,0);
-      var threshold = 0.015;
+      var threshold = 0.02;
       if (nearestx < nearesty && nearestx < threshold)  {
         if(x_line < conv_posEE.x) {
-          penWall.set(-kWall* (x_line - (conv_posEE.x)), 0);
+          penWall.set(-kWall* (threshold-(x_line - (conv_posEE.x))), 0);
         }
         else{
-          penWall.set(-kWall* (x_line - (conv_posEE.x)), 0);
+          penWall.set(-kWall* (threshold-(x_line - (conv_posEE.x))), 0);
         }
         
         fWall = penWall;
       }
       else if (nearesty < nearestx && nearesty < threshold){
         if(y_line < conv_posEE.y) {
-          penWall.set(0, kWall*(y_line - (conv_posEE.y)));
+          penWall.set(0, kWall*(threshold-(y_line - (conv_posEE.y))));
         }
         else{
-          penWall.set(0, kWall*(y_line - (conv_posEE.y)));
+          penWall.set(0, kWall*(threshold-(y_line - (conv_posEE.y))));
         }
         
         fWall = penWall;
