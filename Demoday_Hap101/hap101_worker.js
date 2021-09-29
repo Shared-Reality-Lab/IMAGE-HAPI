@@ -124,7 +124,7 @@ function closeWorker(){
 
   /* virtual wall parameters */
   var fWall = new Vector(0, 0);
-  var kWall = 200; // N/m
+  var kWall = 160; // N/m
   var bWall = 2; // kg/s
   var penWall = new Vector(0, 0);
   
@@ -217,7 +217,7 @@ function closeWorker(){
       /* on the screen vertices = +0.074 to -0.074, 0.018 to 0.112
          workspace = 0.148 m * 0.075 m, relative coords = [0-1, 0-1], screen coords = 950 * 600*/
       //fine-tuned about y axis.
-      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.022) / 0.094);
+      var conv_posEE = new Vector(posEE.x * (-0.5/0.074) + 0.5, (posEE.y- 0.02) / 0.094);
 
       /* haptic physics force calculation */
       /* find the nearest line segment */
