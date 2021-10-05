@@ -239,19 +239,19 @@ function closeWorker(){
 
        const interval = setInterval(function() {
 
-        //console.log(posEE);
+       // console.log(posEE);
          
-        if (i >= locations.length)
+        if (i >= objectdata.length)
           // reset the force
           fEE.set(0, 0);
         else
         {
           // convert centroid coords into haply frame of reference
-          //var centroid = back(new Vector(segmentationdata[i].centroid[0], segmentationdata[i].centroid[1]));
+          var centroid = to_haply_frame(new Vector(objectdata[i].centroid[0], objectdata[i].centroid[1]));
           //console.log(centroid);
           //var centroid = [-0.03772676532591132, 0.060276119739146976];
           //var centroid = new Vector(-0.0354, 0.063866666666666665);
-          var centroid = locations[i];
+          //var centroid = locations[i];
 
           var conv_posEE = posEE.clone();
           var xDiff = (conv_posEE).subtract(centroid);
@@ -278,14 +278,16 @@ function closeWorker(){
   });
 
 function to_world_frame(v) {
-  //return new Vector(v.x * (-0.5/0.074) + 0.5, (v.y - 0.018) / 0.094);
-  return new Vector(v.x * (-0.5/0.060) + 0.5, (v.y - 0.022) / 0.068);
+  var x = 6.2895 * v.x + 0.5009;
+  var y = 10.017 * v.y - 0.2004;
+
+  return new Vector(x, y);
 }
 
 function to_haply_frame(v) {
-  var j = (v.y * 0.068) + 0.022;
-  return new Vector(((v.x - 0.5) / (-0.5/0.060)), j);
-  //return new Vector(v.x * (-0.5/0.060) + 0.5, (v.y - 0.022) / 0.068);
+  var x = (v.x - 0.5009) / 6.2895;
+  var y = (v.y + 0.2004) / 10.017;
+  return new Vector(x, y);
 }
 
 function device_to_graphics(deviceFrame){
