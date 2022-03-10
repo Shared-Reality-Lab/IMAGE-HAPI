@@ -19,10 +19,10 @@ var fEE = new Vector(0, 0);
 let fEEPrev12 = new Vector(0, 0);
 let fEEPrev11 = new Vector(0, 0);
 let fEEPrev10 = new Vector(0, 0);
-let fEEPrev9 =  new Vector(0, 0);
-let fEEPrev8 =  new Vector(0, 0);
-let fEEPrev7 =  new Vector(0, 0);
-let fEEPrev6 =  new Vector(0, 0);
+let fEEPrev9 = new Vector(0, 0);
+let fEEPrev8 = new Vector(0, 0);
+let fEEPrev7 = new Vector(0, 0);
+let fEEPrev6 = new Vector(0, 0);
 let fEEPrev5 = new Vector(0, 0);
 let fEEPrev4 = new Vector(0, 0);
 let fEEPrev3 = new Vector(0, 0);
@@ -145,14 +145,22 @@ self.addEventListener("message", async function (e) {
         if (idx >= coords.length - 1) {
           idx = 0;
           mode = Mode.End;
-          console.table(forces);
+          console.log(idx, forces);
           break;
         }
-        if (Date.now() - tPointToPointTime > 0) {
-          idx++;
+        //if (Date.now() - tPointToPointTime > 0) {
+          const v = new Vector(coords[idx].x, coords[idx].y);
+          const curr = posEE.clone();
+          //console.log(curr, v);
+          const distance = curr.subtract(v).mag();
+          //console.log(distance);
+          if (distance <= 0.009) {
+         //   console.log("next pos", idx);
+            idx++;
+          }
           moveToPos(coords[idx]);
-          tPointToPointTime = Date.now();
-        }
+       //   tPointToPointTime = Date.now();
+      //  }
         break;
       }
       case Mode.End: {
@@ -239,9 +247,9 @@ function moveToPos(vector,
   const y5 = ((i - 4) / w) * fEEPrev4.y;
   const y6 = ((i - 5) / w) * fEEPrev5.y;
 
-  const y7  = ((i - 6) / w) * fEEPrev6.y;
-  const y8  = ((i - 7) / w) * fEEPrev7.y;
-  const y9  = ((i - 8) / w) * fEEPrev8.y;
+  const y7 = ((i - 6) / w) * fEEPrev6.y;
+  const y8 = ((i - 7) / w) * fEEPrev7.y;
+  const y9 = ((i - 8) / w) * fEEPrev8.y;
   const y10 = ((i - 9) / w) * fEEPrev9.y;
   const y11 = ((i - 10) / w) * fEEPrev10.y;
   const y12 = ((i - 11) / w) * fEEPrev11.y;
@@ -274,7 +282,8 @@ function moveToPos(vector,
   fEEPrev2 = fEEPrev.clone();
   fEEPrev = force.clone();
 
-  forces.push({x: fx, y: fy});
+    console.log(idx, Date.now(), force.x, force.y);
+  //forces.push({x: fx, y: fy});
   fEE.set(graphics_to_device(force));
 }
 
