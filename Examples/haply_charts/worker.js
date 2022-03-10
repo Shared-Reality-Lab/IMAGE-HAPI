@@ -1,4 +1,3 @@
-
 var widgetOne;
 var pantograph;
 var haplyBoard;
@@ -11,28 +10,36 @@ var positions = new Vector(0, 0);
 
 /* task space */
 var posEE = new Vector(0, 0);
-
-
 var fDamping = new Vector(0, 0);
 var fEE = new Vector(0, 0)
 
-export const Mode = {
-  Idle,
-  Wait,
-  MoveToFirstPoint,
-  WaitAtFirstPoint,
-  Guidance,
-  End
-}
+var baseCoordsX = [];
+var baseCoordsY = [];
+var coordsX = [];
+var coordsY = [];
 
-var mode = Mode.Wait;
+const Mode = Object.freeze({
+  Idle: 0,
+  Wait: 1,
+  MoveToFirstPoint: 2,
+  WaitAtFirstPoint: 3,
+  Guidance: 4,
+  End: 5
+});
+
+var mode = Mode.Idle;
+
 var tStartWaitTime = Number.POSITIVE_INFINITY;
 var tFirstPointWaitTime = Number.POSITIVE_INFINITY;
 var tPointToPointTime = Number.POSITIVE_INFINITY;
 
 self.addEventListener("message", async function (e) {
 
-  console.log(e.data);
+  baseCoordsX = e.data.xcoords;
+  baseCoordsY = e.data.ycoords;
+
+  xcoords = baseCoordsX.map(x => mapXToHaply(x));
+  ycoords = baseCoordsY.map(y => mapYToHaply(y));
 
   /**************IMPORTING HAPI FILES*****************/
 
@@ -82,32 +89,34 @@ self.addEventListener("message", async function (e) {
     posEE.set(device_to_graphics(posEE));
 
     switch (mode) {
-      case Idle: {
+      case Mode.Idle: {
+        console.log("p");
         tStartWaitTime = Date.now();
         mode = Mode.Wait;
         break;
       }
-      case Wait: {
+      case Mode.Wait: {
         if (Date.now - tStartWaitTime > 2000) { // wait 2 sec
           mode = mode.MoveToFirstPoint;
         }
         break;
       }
-      case MoveToFirstPoint: {
+      case Mode.MoveToFirstPoint: {
         // moveToPos(x_coords[0]);
+        console.log("j");
         tFirstPointWaitTime = Date.now();
         break;
       }
-      case WaitAtFirstPoint: {
+      case Mode.WaitAtFirstPoint: {
         if (Date.now() - tFirstPointWaitTime > 2000) {
           mode = mode.Guidance;
         }
         break;
       }
-      case Guidance: {
+      case Mode.Guidance: {
         break;
       }
-      case End: {
+      case Mode.End: {
         break;
       }
     }
@@ -231,21 +240,23 @@ function moveToPos(vector,
  * @param max Maximum constrained value.
  * @returns 
  */
- function constrain(val, min, max) {
+function constrain(val, min, max) {
   return val > max ? max : val < min ? min : val;
 }
 
-function mapToHaply(x, y) {
-  //x range in highcharts: 
-  //y range in highcharts:
-  const x_new = 0.09673275448453048 * x - 14.912244045131631
-  const y_new = 0.0006815798671793079 * y + -16.455144634814502
-  return [x_new, y_new]
-
-  //x range haply:
-  //y  range haply: 
+function mapXToHaply(x) {
+  const x_new = 0.09673275448453048 * x - 14.912244045131631;
+  return x_new;
 }
 
+function mapYToHaply(y) {
+  const y_new = 0.0006815798671793079 * y + -16.455144634814502;
+  return y_new;
+}
+
+function device_to_graphics(deviceFrame) {
+  return new Vector(-deviceFrame.x, deviceFrame.y);
+}
 
 
 
