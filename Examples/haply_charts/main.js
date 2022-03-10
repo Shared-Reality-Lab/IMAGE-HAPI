@@ -15,10 +15,8 @@ for (let i = 0; i < chartData.length; i++) {
   }
 }
 
-x_coords = movingAvg(x_coords, 5);
-y_coords = movingAvg(y_coords, 5);
-
-// console.log(chartData)
+//x_coords = movingAvg(x_coords, 5);
+//y_coords = movingAvg(y_coords, 5);
 
 let btn = document.createElement("button");
 btn.id = "btn";
@@ -34,7 +32,6 @@ btn_com.style.display = "none";
 
 document.getElementById("btn").addEventListener("click", function () {
   createCanvas();
-  console.log("printed canvas");
 });
 
 // var chartJSON = JSON.parse(highcharts-line-preprocessed);
@@ -199,7 +196,10 @@ async function workerSetup() {
   ];
 
   let hapticPort = await navigator.serial.requestPort({ filters });
-  worker.postMessage("test");
+  worker.postMessage({
+    xcoords: x_coords,
+    ycoords: y_coords
+  });
 }
 
 if (window.Worker) {
