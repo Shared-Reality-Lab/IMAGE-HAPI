@@ -12,16 +12,7 @@ class Board {
 	decoder;
 	prev_data;
 
-    constructor(){ //portName, baud
-		// let port = await navigator.serial.requestPort();
-        // this.port = new p5.SerialPort();  
-        // let options = { baudrate: baud};
-        // this.port.open(portName, options);              // open a serial port
-		// this.port.on('connected', this.serverConnected);
-		//this.init();
-        // this.port.clear();
-		// this.reset_board();
-		console.log("created board")
+    constructor(){
 
 		this.encoder = new TextEncoder("utf-8");
 		this.decoder = new TextDecoder("utf-8");
@@ -31,16 +22,12 @@ class Board {
 		if ('serial' in navigator) {
 			try {
 			  this.port = (await navigator.serial.getPorts())[0];
-			  console.log(this.port);
-			  console.log(navigator.serial);
 			  await this.port.open({ baudRate: 57600}); // `baudRate` was `baudrate` in previous versions.
 	  
 			  this.writer = this.port.writable.getWriter();
-			  //console.log(this.writer);
 			  this.reader = this.port.readable.getReader();
 	  
 			  const signals = await this.port.getSignals();
-			  console.log(signals);
 			} catch(err) {
 			  console.error('There was an error opening the serial port:', err);
 			}
@@ -72,8 +59,6 @@ class Board {
 			j = j + 4;
 		}
 
-		//console.log(outData);
-
 		this.writer.write(outData);
 		return;
     }
@@ -90,9 +75,7 @@ class Board {
 	try {
 		const readerData = await this.reader.read();
 		inData = readerData.value;
-	//	console.log(inData);
-	//	console.log("receive in device: " + this.decoder.decode(readerData.value));
-		
+
 		if (inData[0] != deviceID){
 			return data;
 			//throw "Error, another device expects this data!";
@@ -112,10 +95,6 @@ class Board {
 			j = j + 4;
 		}
 
-		//console.log(data);
-
-		//this.prev_data = data;
-		//console.log(data);
 		return data;
 
 	  } catch (err) {
