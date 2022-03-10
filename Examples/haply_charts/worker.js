@@ -23,6 +23,7 @@ let fEEPrev2 = new Vector(0, 0);
 let fEEPrev = new Vector(0, 0);
 
 var baseCoords = [];
+var nfcoords = [];
 var coords = [];
 
 const Mode = Object.freeze({
@@ -46,8 +47,15 @@ self.addEventListener("message", async function (e) {
 
   baseCoords = e.data.coords;
 
-  coords = baseCoords.map(x => mapToHaply(x));
-  console.log(coords);
+  // non filtered coords
+  nfcoords = baseCoords.map(x => mapToHaply(x));
+  var avgX = getAverage(nfcoords.map(a => a.x), 500);
+  var avgY = getAverage(nfcoords.map(a => a.y), 2);
+
+  for (var i = 0; i < avgX.length; i++) {
+    let c = { x: avgX[i], y: avgY[i] }
+    coords.push(c);
+  }
 
   /**************IMPORTING HAPI FILES*****************/
 
@@ -130,13 +138,15 @@ self.addEventListener("message", async function (e) {
           mode = Mode.End;
           break;
         }
-        if (Date.now() - tPointToPointTime > 15) {
+        //if (Date.now() - tPointToPointTime > 12) {
           idx++;
           moveToPos(coords[idx]);
-        }
+          //tPointToPointTime = Date.now();
+        //}
         break;
       }
       case Mode.End: {
+        fEE.set(0, 0);
         break;
       }
     }
@@ -160,8 +170,8 @@ self.addEventListener("message", async function (e) {
 
 function moveToPos(vector,
   springConstMultiplier = 2,
-  ki = 0.5,
-  kd = 1.2) {
+  ki = 0,
+  kd = 0.1) {
 
   if (vector == undefined)
     return;
@@ -174,12 +184,11 @@ function moveToPos(vector,
   //console.log(posEE, vector);
   // allow for higher tolerance when moving from the home position
   // apparently needs more force to move from there
-  const constrainedMax = atHomePos ? 6 : 3;
+  const constrainedMax = atHomePos() ? 6 : 3;
 
   // D controller
   const dx = (posEE.clone()).subtract(prevPosEE);
   const dt = 1 / 1000;
-  const c = 1.8;
   const cdxdt = (dx.divide(dt)).multiply(kd);
 
   // I controller
@@ -192,55 +201,36 @@ function moveToPos(vector,
   const maxMag = new Vector(constrainedMax, constrainedMax).mag();
 
   // if outside of the initial movement from the home position the force is too high, ignore it
-  // if (forceMag >= maxMag) {
-  //   force.set(0, 0);
-  // }
-  // else {
-  //   if (!atHomePos()) {
 
-  //     // this will break if we have less than 10 points in a subsegment
-  //     //console.log(finishTransition);
-  //     if (false) {
-  //       const w = 21;
-  //       const i = 6;
+  if (forceMag >= maxMag)
+    force.set(0, 0);
+  const w = 21;
+  const i = 6;
 
-  //       const x1 = (i / w) * fx;
-  //       const x2 = ((i - 1) / w) * fEEPrev.x;
-  //       const x3 = ((i - 2) / w) * fEEPrev2.x;
-  //       const x4 = ((i - 3) / w) * fEEPrev3.x;
-  //       const x5 = ((i - 4) / w) * fEEPrev4.x;
-  //       const x6 = ((i - 5) / w) * fEEPrev5.x;
+  const x1 = (i / w) * fx;
+  const x2 = ((i - 1) / w) * fEEPrev.x;
+  const x3 = ((i - 2) / w) * fEEPrev2.x;
+  const x4 = ((i - 3) / w) * fEEPrev3.x;
+  const x5 = ((i - 4) / w) * fEEPrev4.x;
+  const x6 = ((i - 5) / w) * fEEPrev5.x;
 
-  //       const y1 = (i / w) * fy;
-  //       const y2 = ((i - 1) / w) * fEEPrev.y;
-  //       const y3 = ((i - 2) / w) * fEEPrev2.y;
-  //       const y4 = ((i - 3) / w) * fEEPrev3.y;
-  //       const y5 = ((i - 4) / w) * fEEPrev4.y;
-  //       const y6 = ((i - 5) / w) * fEEPrev5.y;
+  const y1 = (i / w) * fy;
+  const y2 = ((i - 1) / w) * fEEPrev.y;
+  const y3 = ((i - 2) / w) * fEEPrev2.y;
+  const y4 = ((i - 3) / w) * fEEPrev3.y;
+  const y5 = ((i - 4) / w) * fEEPrev4.y;
+  const y6 = ((i - 5) / w) * fEEPrev5.y;
 
-  //       fx = x1 + x2 + x3 + x4 + x5 + x6;
-  //       fy = y1 + y2 + y3 + y4 + y5 + y6;
-  //       const stdX = getStd([x1, x2, x3, x4, x5, x6])
-  //       const stdY = getStd([y1, y2, y3, y4, y5, y6]);
+  fx = x1 + x2 + x3 + x4 + x5 + x6;
+  fy = y1 + y2 + y3 + y4 + y5 + y6;
 
-  //       // if (stdX < 0.2 && stdY < 0.2) {
-  //       //   finishTransition = false;
-  //       // }
-  //     }
-  //     else {
-  //       fx = (1 / 2 * fEEPrev.x + fx);
-  //       fy = (1 / 2 * fEEPrev.y + fy);
-  //     }
+  if (!isFinite(fx))
+    fx = 0;
+  if (!isFinite(fy))
+    fy = 0;
 
-  //     if (!isFinite(fx))
-  //       fx = 0;
-  //     if (!isFinite(fy))
-  //       fy = 0;
-
-  //     fx = constrain(fx, -constrainedMax, constrainedMax);
-  //     fy = constrain(fy, -constrainedMax, constrainedMax);
-  //   }
-  // }
+  fx = constrain(fx, -constrainedMax, constrainedMax);
+  fy = constrain(fy, -constrainedMax, constrainedMax);
 
   force.set(fx, fy);
 
@@ -250,8 +240,20 @@ function moveToPos(vector,
   fEEPrev2 = fEEPrev.clone();
   fEEPrev = force.clone();
 
-  console.log(idx, force.y);
+  console.log(force);
   fEE.set(graphics_to_device(force));
+}
+
+
+function getAverage(array, countBefore, countAfter) {
+  if (countAfter == undefined) countAfter = 0;
+  const result = [];
+  for (let i = 0; i < array.length; i++) {
+    const subArr = array.slice(Math.max(i - countBefore, 0), Math.min(i + countAfter + 1, array.length));
+    const avg = subArr.reduce((a, b) => a + (isNaN(b) ? 0 : b), 0) / subArr.length;
+    result.push(avg);
+  }
+  return result;
 }
 
 /**
@@ -272,7 +274,7 @@ function mapToHaply(v) {
 }
 
 function atHomePos() {
-  return idx == 0 ? true : false;
+  return idx == 1 ? true : false;
 }
 
 function device_to_graphics(deviceFrame) {

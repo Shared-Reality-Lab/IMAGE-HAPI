@@ -1,21 +1,16 @@
-// var canvas = document.getElementById('canvas');
-// var ctx = canvas.getContext('2d');
-
-
-Array.prototype.hasMin = function(attrib) {
-  return (this.length && this.reduce(function(prev, curr){ 
-      return prev[attrib] < curr[attrib] ? prev : curr; 
-  })) || null;
-}
-
-Array.prototype.hasMax = function(attrib) {
-  return (this.length && this.reduce(function(prev, curr){ 
-      return prev[attrib] > curr[attrib] ? prev : curr; 
-  })) || null;
-}
-
-
 import data from "./highcharts-line-preprocessed.json" assert { type: "json" };
+
+Array.prototype.hasMin = function (attrib) {
+  return (this.length && this.reduce(function (prev, curr) {
+    return prev[attrib] < curr[attrib] ? prev : curr;
+  })) || null;
+}
+
+Array.prototype.hasMax = function (attrib) {
+  return (this.length && this.reduce(function (prev, curr) {
+    return prev[attrib] > curr[attrib] ? prev : curr;
+  })) || null;
+}
 
 const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
 let coords = [];
@@ -39,7 +34,6 @@ const minX = coords.hasMin('x').x;
 const maxX = coords.hasMax('x').x;
 const minY = coords.hasMin('y').y;
 const maxY = coords.hasMax('y').y;
-
 console.log(minX, maxX, minY, maxY);
 
 let btn = document.createElement("button");
@@ -179,39 +173,6 @@ function createCanvas() {
 
 }
 
-function movingAvg(array, count) {
-
-  // calculate average for subarray
-  var avg = function (array) {
-
-    var sum = 0, count = 0, val;
-    for (var i in array) {
-      val = array[i];
-      sum += val;
-      count++;
-    }
-
-    return sum / count;
-  };
-
-  var result = [], val;
-
-  // pad beginning of result with null values
-  for (var i = 0; i < count - 1; i++)
-    result.push(null);
-
-  // calculate average for each subarray and add to result
-  for (var i = 0, len = array.length - count; i <= len; i++) {
-
-    val = avg(array.slice(i, i + count));
-    if (isNaN(val))
-      result.push(null);
-    else
-      result.push(val);
-  }
-
-  return result;
-}
 
 /******worker code******** */
 async function workerSetup() {
