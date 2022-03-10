@@ -34,7 +34,7 @@ for (let i = 0; i < chartData.length; i++) {
   coords.push(pos);
 }
 // console.table(raw_y);
-let y_filt = movingAvg(raw_y,20)
+let y_filt = movingAvg(raw_y,40)
 for (let i = 0; i < chartData.length; i++){
 
   const pos ={x:raw_x[i], y:y_filt[i]};
