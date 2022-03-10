@@ -90,11 +90,13 @@ self.addEventListener("message", async function (e) {
     switch (mode) {
       case Mode.Idle: {
         tStartWaitTime = Date.now();
+        console.log("the coord", coords[0]);
         mode = Mode.Wait;
         break;
       }
       case Mode.Wait: {
         if (Date.now() - tStartWaitTime > 2000) { // wait 2 sec
+          idx = 1;
           console.log("Moving To First Point");
           mode = Mode.MoveToFirstPoint;
         }
@@ -249,9 +251,13 @@ function constrain(val, min, max) {
 }
 
 function mapToHaply(v) {
-  const x_new = 0.09673275448453048 * v.x - 14.912244045131631;
-  const y_new = 0.0006815798671793079 * v.y + -16.455144634814502;
+  const x_new = -0.00518656 * v.x + 0.79727573; //0.09673275448453048 * v.x - 14.912244045131631;
+  const y_new =  -0.000495 * v.y + 0.119761; //  0.0006815798671793079 * v.y + -16.455144634814502;
   return { x_new, y_new };
+}
+
+function atHomePos() {
+  return idx == 0 ? true : false;
 }
 
 function device_to_graphics(deviceFrame) {
