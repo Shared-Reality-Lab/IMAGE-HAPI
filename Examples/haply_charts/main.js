@@ -1,6 +1,20 @@
 // var canvas = document.getElementById('canvas');
 // var ctx = canvas.getContext('2d');
+import data from "./highcharts-line-preprocessed.json" assert { type: "json" };
 
+const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
+let x_coords = [];
+let y_coords = [];
+
+for (let i = 0; i < chartData.length; i++){
+  x_coords.push(chartData[i]["x"])
+  if(chartData[i]["y"]){
+    y_coords.push(chartData[i]["y"])
+  }else{
+    y_coords.push(0)
+  }
+}
+// console.log(chartData)
 
 let btn = document.createElement("button");
 btn.id = "btn";
@@ -19,6 +33,8 @@ document.getElementById("btn").addEventListener("click", function() {
   console.log("printed canvas");
 });
 
+// var chartJSON = JSON.parse(highcharts-line-preprocessed);
+// const chartJSON = JSON.parse('highcharts-line.json');
 var raf;
 var worker;
 const worldPixelWidth                     = 1000;
