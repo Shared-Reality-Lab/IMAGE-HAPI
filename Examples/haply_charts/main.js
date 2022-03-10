@@ -7,13 +7,31 @@ let x_coords = [];
 let y_coords = [];
 
 for (let i = 0; i < chartData.length; i++){
-  x_coords.push(chartData[i]["x"])
+  x_coords.push(chartData[i]["x"]/10000000000)
   if(chartData[i]["y"]){
-    y_coords.push(chartData[i]["y"])
+    y_coords.push(chartData[i]["y"]/10000)
   }else{
     y_coords.push(0)
   }
 }
+
+
+
+
+
+
+
+function mapToHaply(x,y){
+  //x range in highcharts: 
+  //y range in highcharts:
+  const x_new = 0.09673275448453048*x-14.912244045131631
+  const y_new = 0.0006815798671793079*y + -16.455144634814502
+  return [x_new,y_new]
+
+  //x range haply:
+  //y  range haply: 
+}
+
 // console.log(chartData)
 
 let btn = document.createElement("button");
@@ -57,9 +75,6 @@ function createCanvas(){
   document.body.removeChild(btn);
   btn_com.style.display = "block";
  
-
-  
-
 var canvas = document.createElement('canvas');
 
 canvas.id = "main";
@@ -146,7 +161,8 @@ function updateAnimation(){
   box.draw();
   let xE = posEE.x;
   let yE = posEE.y;
-  // console.log(xE);
+  console.log("x: ", xE);
+  console.log("y: ", yE)
 
   xE = pixelsPerMeter * -xE;
   yE = pixelsPerMeter * yE;
@@ -183,7 +199,6 @@ if (window.Worker) {
   worker.addEventListener("message", function(msg){
       posEE.x = msg.data.x;
       posEE.y = msg.data.y;
-      // console.log(posEE)
   });
   
 }
