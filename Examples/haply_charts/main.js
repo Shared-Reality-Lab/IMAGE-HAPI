@@ -103,7 +103,7 @@ function createCanvas() {
   canvas.style.top = "100px";
 
   var image = new Image();
-  image.src = "https://i.gyazo.com/e89170840529d6c5e1cae927c50b1245.png";
+  image.src = "./chart.jpeg";
 
 
   var body = document.getElementsByTagName("body")[0];
