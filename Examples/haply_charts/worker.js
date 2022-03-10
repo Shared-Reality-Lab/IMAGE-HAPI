@@ -16,6 +16,13 @@ var fDamping = new Vector(0, 0);
 // get force needed for torques
 let force = new Vector(0, 0);
 var fEE = new Vector(0, 0);
+let fEEPrev12 = new Vector(0, 0);
+let fEEPrev11 = new Vector(0, 0);
+let fEEPrev10 = new Vector(0, 0);
+let fEEPrev9 =  new Vector(0, 0);
+let fEEPrev8 =  new Vector(0, 0);
+let fEEPrev7 =  new Vector(0, 0);
+let fEEPrev6 =  new Vector(0, 0);
 let fEEPrev5 = new Vector(0, 0);
 let fEEPrev4 = new Vector(0, 0);
 let fEEPrev3 = new Vector(0, 0);
@@ -25,6 +32,8 @@ let fEEPrev = new Vector(0, 0);
 var baseCoords = [];
 var nfcoords = [];
 var coords = [];
+
+var forces = [];
 
 const Mode = Object.freeze({
   Idle: 0,
@@ -136,13 +145,14 @@ self.addEventListener("message", async function (e) {
         if (idx >= coords.length - 1) {
           idx = 0;
           mode = Mode.End;
+          console.table(forces);
           break;
         }
-        //if (Date.now() - tPointToPointTime > 12) {
+        if (Date.now() - tPointToPointTime > 0) {
           idx++;
           moveToPos(coords[idx]);
-          //tPointToPointTime = Date.now();
-        //}
+          tPointToPointTime = Date.now();
+        }
         break;
       }
       case Mode.End: {
@@ -169,9 +179,9 @@ self.addEventListener("message", async function (e) {
 });
 
 function moveToPos(vector,
-  springConstMultiplier = 2,
+  springConstMultiplier = 1.7,
   ki = 0,
-  kd = 0.1) {
+  kd = 0.01) {
 
   if (vector == undefined)
     return;
@@ -204,8 +214,8 @@ function moveToPos(vector,
 
   if (forceMag >= maxMag)
     force.set(0, 0);
-  const w = 21;
-  const i = 6;
+  const w = 91;//21;
+  const i = 13;//6;
 
   const x1 = (i / w) * fx;
   const x2 = ((i - 1) / w) * fEEPrev.x;
@@ -214,6 +224,14 @@ function moveToPos(vector,
   const x5 = ((i - 4) / w) * fEEPrev4.x;
   const x6 = ((i - 5) / w) * fEEPrev5.x;
 
+  const x7 = ((i - 6) / w) * fEEPrev6.x;
+  const x8 = ((i - 7) / w) * fEEPrev7.x;
+  const x9 = ((i - 8) / w) * fEEPrev8.x;
+  const x10 = ((i - 9) / w) * fEEPrev9.x;
+  const x11 = ((i - 10) / w) * fEEPrev10.x;
+  const x12 = ((i - 11) / w) * fEEPrev11.x;
+  const x13 = ((i - 12) / w) * fEEPrev12.x;
+
   const y1 = (i / w) * fy;
   const y2 = ((i - 1) / w) * fEEPrev.y;
   const y3 = ((i - 2) / w) * fEEPrev2.y;
@@ -221,8 +239,17 @@ function moveToPos(vector,
   const y5 = ((i - 4) / w) * fEEPrev4.y;
   const y6 = ((i - 5) / w) * fEEPrev5.y;
 
-  fx = x1 + x2 + x3 + x4 + x5 + x6;
-  fy = y1 + y2 + y3 + y4 + y5 + y6;
+  const y7  = ((i - 6) / w) * fEEPrev6.y;
+  const y8  = ((i - 7) / w) * fEEPrev7.y;
+  const y9  = ((i - 8) / w) * fEEPrev8.y;
+  const y10 = ((i - 9) / w) * fEEPrev9.y;
+  const y11 = ((i - 10) / w) * fEEPrev10.y;
+  const y12 = ((i - 11) / w) * fEEPrev11.y;
+  const y13 = ((i - 12) / w) * fEEPrev12.y;
+
+
+  fx = x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11 + x12 + x13;
+  fy = y1 + y2 + y3 + y4 + y5 + y6 + y7 + y8 + y9 + y10 + y11 + y12 + y13;
 
   if (!isFinite(fx))
     fx = 0;
@@ -234,13 +261,20 @@ function moveToPos(vector,
 
   force.set(fx, fy);
 
+  fEEPrev12 = fEEPrev11.clone();
+  fEEPrev11 = fEEPrev10.clone();
+  fEEPrev10 = fEEPrev9.clone();
+  fEEPrev9 = fEEPrev8.clone();
+  fEEPrev8 = fEEPrev7.clone();
+  fEEPrev7 = fEEPrev6.clone();
+  fEEPrev6 = fEEPrev5.clone();
   fEEPrev5 = fEEPrev4.clone();
   fEEPrev4 = fEEPrev3.clone();
   fEEPrev3 = fEEPrev2.clone();
   fEEPrev2 = fEEPrev.clone();
   fEEPrev = force.clone();
 
-  console.log(force);
+  forces.push({x: fx, y: fy});
   fEE.set(graphics_to_device(force));
 }
 
@@ -268,7 +302,7 @@ function constrain(val, min, max) {
 }
 
 function mapToHaply(v) {
-  const x = -1 * (-0.00518656 * v.x + 0.79727573); //0.09673275448453048 * v.x - 14.912244045131631;
+  const x = 0.00518656 * v.x - 0.79727573; //0.09673275448453048 * v.x - 14.912244045131631;
   const y = -0.000495 * v.y + 0.119761; //  0.0006815798671793079 * v.y + -16.455144634814502;
   return { x, y };
 }
