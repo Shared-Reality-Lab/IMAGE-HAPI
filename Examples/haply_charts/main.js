@@ -1,10 +1,23 @@
 // var canvas = document.getElementById('canvas');
 // var ctx = canvas.getContext('2d');
+
+
+Array.prototype.hasMin = function(attrib) {
+  return (this.length && this.reduce(function(prev, curr){ 
+      return prev[attrib] < curr[attrib] ? prev : curr; 
+  })) || null;
+}
+
+Array.prototype.hasMax = function(attrib) {
+  return (this.length && this.reduce(function(prev, curr){ 
+      return prev[attrib] > curr[attrib] ? prev : curr; 
+  })) || null;
+}
+
+
 import data from "./highcharts-line-preprocessed.json" assert { type: "json" };
 
 const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
-let xcoords = [];
-let ycoords = [];
 let coords = [];
 
 for (let i = 0; i < chartData.length; i++) {
@@ -21,8 +34,13 @@ for (let i = 0; i < chartData.length; i++) {
   coords.push(pos);
 }
 
-//x_coords = movingAvg(x_coords, 5);
-//y_coords = movingAvg(y_coords, 5);
+// get extremes for calibration
+const minX = coords.hasMin('x').x;
+const maxX = coords.hasMax('x').x;
+const minY = coords.hasMin('y').y;
+const maxY = coords.hasMax('y').y;
+
+console.log(minX, maxX, minY, maxY);
 
 let btn = document.createElement("button");
 btn.id = "btn";
@@ -219,3 +237,4 @@ if (window.Worker) {
 else {
   console.log("Workers not supported.");
 }
+
