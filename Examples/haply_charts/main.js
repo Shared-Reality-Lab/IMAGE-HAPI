@@ -3,16 +3,22 @@
 import data from "./highcharts-line-preprocessed.json" assert { type: "json" };
 
 const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
-let x_coords = [];
-let y_coords = [];
+let xcoords = [];
+let ycoords = [];
+let coords = [];
 
 for (let i = 0; i < chartData.length; i++) {
-  x_coords.push(chartData[i]["x"] / 10000000000)
+  let xcoord = chartData[i]["x"] / 10000000000;
+  let ycoord = 0;
+
   if (chartData[i]["y"]) {
-    y_coords.push(chartData[i]["y"] / 10000)
+    ycoord = chartData[i]["y"] / 10000;
   } else {
-    y_coords.push(0)
+    ycoord = 0;
   }
+
+  const pos = { x: xcoord, y: ycoord }
+  coords.push(pos);
 }
 
 //x_coords = movingAvg(x_coords, 5);
@@ -135,7 +141,7 @@ function createCanvas() {
     border.draw();
     let xE = posEE.x;
     let yE = posEE.y;
-    console.log("x: ", xE, "y: ", yE)
+    //console.log("x: ", xE, "y: ", yE)
 
     xE = pixelsPerMeter * -xE;
     yE = pixelsPerMeter * yE;
@@ -197,8 +203,7 @@ async function workerSetup() {
 
   let hapticPort = await navigator.serial.requestPort({ filters });
   worker.postMessage({
-    xcoords: x_coords,
-    ycoords: y_coords
+    coords: coords
   });
 }
 
