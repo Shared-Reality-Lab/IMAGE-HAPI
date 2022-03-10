@@ -34,10 +34,10 @@ for (let i = 0; i < chartData.length; i++) {
   coords.push(pos);
 }
 // console.table(raw_y);
-let y_filt = movingAvg(raw_y,40)
-for (let i = 0; i < chartData.length; i++){
+let y_filt = movingAvg(raw_y, 40)
+for (let i = 0; i < chartData.length; i++) {
 
-  const pos ={x:raw_x[i], y:y_filt[i]};
+  const pos = { x: raw_x[i], y: y_filt[i] };
   filt_coords.push(pos)
 
 
@@ -102,6 +102,9 @@ function createCanvas() {
   canvas.style.left = "100px";
   canvas.style.top = "100px";
 
+  var image = new Image();
+  image.src = "https://i.gyazo.com/e89170840529d6c5e1cae927c50b1245.png";
+
 
   var body = document.getElementsByTagName("body")[0];
   body.appendChild(canvas);
@@ -136,6 +139,7 @@ function createCanvas() {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     updateAnimation();
     checkBounds();
 
@@ -215,44 +219,44 @@ else {
 }
 
 
-function movingAvg(array, count){
+function movingAvg(array, count) {
 
   // calculate average for subarray
-  var avg = function(array){
+  var avg = function (array) {
 
-      var sum = 0, count = 0, val;
-      for (var i in array){
-        
-          val = array[i];
-         if (!isNaN(val)){
-          sum += val;
-          count++;
-         }
-         else{
-           sum +=0;
-           count++
-         }
-          
+    var sum = 0, count = 0, val;
+    for (var i in array) {
+
+      val = array[i];
+      if (!isNaN(val)) {
+        sum += val;
+        count++;
       }
-      // console.log(sum)
-      return sum / count;
+      else {
+        sum += 0;
+        count++
+      }
+
+    }
+    // console.log(sum)
+    return sum / count;
   };
 
   var result = [], val;
 
   // pad beginning of result with null values
-  for (var i=0; i < count-1; i++)
-      result.push(0);
+  for (var i = 0; i < count - 1; i++)
+    result.push(0);
 
   // calculate average for each subarray and add to result
-  for (var i=0, len=array.length - count; i <= len; i++){
-    
-      val = avg(array.slice(i, i + count));
-      // console.log(val)
-      if (isNaN(val))
-          result.push(null);
-      else
-          result.push(val);
+  for (var i = 0, len = array.length - count; i <= len; i++) {
+
+    val = avg(array.slice(i, i + count));
+    // console.log(val)
+    if (isNaN(val))
+      result.push(null);
+    else
+      result.push(val);
   }
 
   return result;
