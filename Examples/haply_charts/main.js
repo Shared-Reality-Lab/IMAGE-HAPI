@@ -12,8 +12,12 @@ Array.prototype.hasMax = function (attrib) {
   })) || null;
 }
 
+let raw_x = []
+let raw_y = []
+
 const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
 let coords = [];
+let filt_coords = []
 
 for (let i = 0; i < chartData.length; i++) {
   let xcoord = chartData[i]["x"] / 10000000000;
@@ -24,11 +28,22 @@ for (let i = 0; i < chartData.length; i++) {
   } else {
     ycoord = 0;
   }
-
+  raw_x.push(xcoord)
+  raw_y.push(ycoord);
   const pos = { x: xcoord, y: ycoord }
   coords.push(pos);
 }
+// console.table(raw_y);
+let y_filt = movingAvg(raw_y,20)
+for (let i = 0; i < chartData.length; i++){
 
+  const pos ={x:raw_x[i], y:y_filt[i]};
+  filt_coords.push(pos)
+
+
+}
+
+console.table(coords)
 // get extremes for calibration
 const minX = coords.hasMin('x').x;
 const maxX = coords.hasMax('x').x;
@@ -182,7 +197,7 @@ async function workerSetup() {
 
   let hapticPort = await navigator.serial.requestPort({ filters });
   worker.postMessage({
-    coords: coords
+    coords: filt_coords
   });
 }
 
@@ -197,5 +212,49 @@ if (window.Worker) {
 }
 else {
   console.log("Workers not supported.");
+}
+
+
+function movingAvg(array, count){
+
+  // calculate average for subarray
+  var avg = function(array){
+
+      var sum = 0, count = 0, val;
+      for (var i in array){
+        
+          val = array[i];
+         if (!isNaN(val)){
+          sum += val;
+          count++;
+         }
+         else{
+           sum +=0;
+           count++
+         }
+          
+      }
+      // console.log(sum)
+      return sum / count;
+  };
+
+  var result = [], val;
+
+  // pad beginning of result with null values
+  for (var i=0; i < count-1; i++)
+      result.push(0);
+
+  // calculate average for each subarray and add to result
+  for (var i=0, len=array.length - count; i <= len; i++){
+    
+      val = avg(array.slice(i, i + count));
+      // console.log(val)
+      if (isNaN(val))
+          result.push(null);
+      else
+          result.push(val);
+  }
+
+  return result;
 }
 
