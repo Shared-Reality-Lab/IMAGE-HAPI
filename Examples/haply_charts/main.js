@@ -1,6 +1,7 @@
 // var canvas = document.getElementById('canvas');
 // var ctx = canvas.getContext('2d');
 
+
 let btn = document.createElement("button");
 btn.id = "btn";
 btn.innerHTML = "Play Haptic Rendering";
@@ -22,10 +23,7 @@ var raf;
 var worker;
 const worldPixelWidth                     = 1000;
 
-var posBall = {
-  x:0,
-  y:0
-};
+
 var posEE = {
   x:0,
   y:0
@@ -65,23 +63,8 @@ var ctx = canvas.getContext('2d');
 
 /* Screen and world setup parameters */
 var pixelsPerMeter = 4000.0;
-var radsPerDegree = 0.01745;
 
-var ball = {
-  x: 100,
-  y: 100,
-  vx: 5,
-  vy: 2,
-  radius: 25,
-  color: 'blue',
-  draw: function() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-  }
-};
+
 
 var border = {
   draw: function(){
@@ -100,8 +83,6 @@ var box = {
 var endEffector = {
   x: canvas.width/2,
   y: 25,
-  vx: 5,
-  vy: 2,
   radius: 15,
   color: 'black',
   draw: function() {
@@ -132,14 +113,6 @@ canvas.addEventListener('mouseover', function(e) {
 // });
 
 function checkBounds(){
-  if (ball.y + ball.vy > canvas.height ||
-      ball.y + ball.vy < 0) {
-    ball.vy = -ball.vy;
-  }
-  if (ball.x + ball.vx > canvas.width ||
-      ball.x + ball.vx < 0) {
-    ball.vx = -ball.vx;
-  }
 
   if (endEffector.y + endEffector.vy > canvas.height ||
     endEffector.y + endEffector.vy < 0) {
@@ -155,20 +128,14 @@ function checkBounds(){
 function updateAnimation(){
   border.draw();
   box.draw();
-  xE = posEE.x;
-  yE = posEE.y;
-  xB = posBall.x;
-  yB = posBall.y;
+  let xE = posEE.x;
+  let yE = posEE.y;
+  // console.log(xE);
 
   xE = pixelsPerMeter * -xE;
   yE = pixelsPerMeter * yE;
 
-  //update ball
-
-  ball.x =deviceOrigin.x + xB * -pixelsPerMeter-x_trans;
-  ball.y = deviceOrigin.y + yB * pixelsPerMeter;
-  ball.draw();
-    
+ 
 
   //update endEffector
   endEffector.x = deviceOrigin.x +xE-x_trans;
@@ -178,9 +145,6 @@ function updateAnimation(){
 
 
 
-
-
-ball.draw();
 border.draw();
 box.draw();
 endEffector.draw();
@@ -189,7 +153,11 @@ endEffector.draw();
 
   /******worker code******** */
 async function workerSetup(){
-  let port = await navigator.serial.requestPort();
+  const filters = [
+    { usbVendorId: 0x2341, usbProductId: 0x804D }
+];
+
+let hapticPort = await navigator.serial.requestPort({filters});
   worker.postMessage("test");
 }
 
@@ -197,12 +165,9 @@ if (window.Worker) {
   worker = new Worker("worker.js");
   document.getElementById("com").addEventListener("click", workerSetup);
   worker.addEventListener("message", function(msg){
-
-      posEE.x = msg.data.positions.x;
-      posEE.y = msg.data.positions.y;
-      posBall.x = msg.data.posBall.x;
-      posBall.y = msg.data.posBall.y;
-
+      posEE.x = msg.data.x;
+      posEE.y = msg.data.y;
+      // console.log(posEE)
   });
   
 }
