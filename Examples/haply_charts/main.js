@@ -19,7 +19,7 @@ const chartData = data["highChartsData"]["data"]["series"][0]["data"][0]
 let coords = [];
 let filt_coords = []
 
-for (let i = 0; i < chartData.length; i++) {
+for (let i = 0; i < chartData.length; i += 1) {
   let xcoord = chartData[i]["x"] / 10000000000;
   let ycoord = 0;
 
@@ -34,7 +34,7 @@ for (let i = 0; i < chartData.length; i++) {
   coords.push(pos);
 }
 // console.table(raw_y);
-let y_filt = movingAvg(raw_y, 40)
+let y_filt = movingAvg(raw_y, 10)
 for (let i = 0; i < chartData.length; i++) {
 
   const pos = { x: raw_x[i], y: y_filt[i] };
@@ -125,7 +125,7 @@ function createCanvas() {
   var endEffector = {
     x: canvas.width / 2,
     y: 0,
-    radius: 15,
+    radius: 5,
     color: 'black',
     draw: function () {
       ctx.beginPath();

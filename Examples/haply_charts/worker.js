@@ -148,19 +148,19 @@ self.addEventListener("message", async function (e) {
           console.log(idx, forces);
           break;
         }
-        //if (Date.now() - tPointToPointTime > 0) {
+        if (Date.now() - tPointToPointTime > 0) {
           const v = new Vector(coords[idx].x, coords[idx].y);
           const curr = posEE.clone();
           //console.log(curr, v);
           const distance = curr.subtract(v).mag();
           //console.log(distance);
-          if (distance <= 0.009) {
+          if (distance <= 0.0095) {
          //   console.log("next pos", idx);
             idx++;
           }
           moveToPos(coords[idx]);
-       //   tPointToPointTime = Date.now();
-      //  }
+          tPointToPointTime = Date.now();
+        }
         break;
       }
       case Mode.End: {
@@ -189,7 +189,7 @@ self.addEventListener("message", async function (e) {
 function moveToPos(vector,
   springConstMultiplier = 1.7,
   ki = 0,
-  kd = 0.01) {
+  kd = 0.21) {
 
   if (vector == undefined)
     return;
@@ -202,7 +202,7 @@ function moveToPos(vector,
   //console.log(posEE, vector);
   // allow for higher tolerance when moving from the home position
   // apparently needs more force to move from there
-  const constrainedMax = atHomePos() ? 6 : 3;
+  const constrainedMax = atHomePos() ? 6 : 2;
 
   // D controller
   const dx = (posEE.clone()).subtract(prevPosEE);
@@ -222,8 +222,8 @@ function moveToPos(vector,
 
   if (forceMag >= maxMag)
     force.set(0, 0);
-  const w = 91;//21;
-  const i = 13;//6;
+  const w = 21;//91;
+  const i = 6;//13;
 
   const x1 = (i / w) * fx;
   const x2 = ((i - 1) / w) * fEEPrev.x;
@@ -256,8 +256,8 @@ function moveToPos(vector,
   const y13 = ((i - 12) / w) * fEEPrev12.y;
 
 
-  fx = x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11 + x12 + x13;
-  fy = y1 + y2 + y3 + y4 + y5 + y6 + y7 + y8 + y9 + y10 + y11 + y12 + y13;
+  fx = x1 + x2 + x3 + x4 + x5 + x6;// + x7 + x8 + x9 + x10 + x11 + x12 + x13;
+  fy = y1 + y2 + y3 + y4 + y5 + y6;// + y7 + y8 + y9 + y10 + y11 + y12 + y13;
 
   if (!isFinite(fx))
     fx = 0;
@@ -269,20 +269,20 @@ function moveToPos(vector,
 
   force.set(fx, fy);
 
-  fEEPrev12 = fEEPrev11.clone();
-  fEEPrev11 = fEEPrev10.clone();
-  fEEPrev10 = fEEPrev9.clone();
-  fEEPrev9 = fEEPrev8.clone();
-  fEEPrev8 = fEEPrev7.clone();
-  fEEPrev7 = fEEPrev6.clone();
-  fEEPrev6 = fEEPrev5.clone();
+  // fEEPrev12 = fEEPrev11.clone();
+  // fEEPrev11 = fEEPrev10.clone();
+  // fEEPrev10 = fEEPrev9.clone();
+  // fEEPrev9 = fEEPrev8.clone();
+  // fEEPrev8 = fEEPrev7.clone();
+  // fEEPrev7 = fEEPrev6.clone();
+  // fEEPrev6 = fEEPrev5.clone();
   fEEPrev5 = fEEPrev4.clone();
   fEEPrev4 = fEEPrev3.clone();
   fEEPrev3 = fEEPrev2.clone();
   fEEPrev2 = fEEPrev.clone();
   fEEPrev = force.clone();
 
-    console.log(idx, Date.now(), force.x, force.y);
+    console.log(idx, performance.now(), force.x, force.y);
   //forces.push({x: fx, y: fy});
   fEE.set(graphics_to_device(force));
 }
@@ -311,8 +311,9 @@ function constrain(val, min, max) {
 }
 
 function mapToHaply(v) {
-  const x = 0.00518656 * v.x - 0.79727573; //0.09673275448453048 * v.x - 14.912244045131631;
-  const y = -0.000495 * v.y + 0.119761; //  0.0006815798671793079 * v.y + -16.455144634814502;
+  const x = 0.005 * v.x - 0.74951;
+  //const x = 0.00518656 * v.x - 0.79727573; //0.09673275448453048 * v.x - 14.912244045131631;
+  const y = -0.0005 * v.y + 0.128; //  0.0006815798671793079 * v.y + -16.455144634814502;
   return { x, y };
 }
 
