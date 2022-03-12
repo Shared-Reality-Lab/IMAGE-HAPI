@@ -34,7 +34,6 @@ let fEEPrev = new Vector(0, 0);
 var baseCoords = [];
 var nfcoords = [];
 var coords = [];
-
 var forces = [];
 
 const Mode = Object.freeze({
@@ -75,12 +74,12 @@ self.addEventListener("message", async function (e) {
   /**************IMPORTING HAPI FILES*****************/
 
 
-  self.importScripts("libraries/Board.js");
-  self.importScripts("libraries/Actuator.js");
-  self.importScripts("libraries/Sensor.js");
-  self.importScripts("libraries/Pwm.js");
-  self.importScripts("libraries/Device.js");
-  self.importScripts("libraries/Pantograph.js");
+  self.importScripts("../libraries/Board.js");
+  self.importScripts("../libraries/Actuator.js");
+  self.importScripts("../libraries/Sensor.js");
+  self.importScripts("../libraries/Pwm.js");
+  self.importScripts("../libraries/Device.js");
+  self.importScripts("../libraries/Pantograph.js");
 
 
 
@@ -158,7 +157,7 @@ self.addEventListener("message", async function (e) {
           const distance = curr.subtract(v).mag();
 
           const threshold = idx <= 3 ? 0.025 : distThreshold;
-          console.log(threshold);
+          //console.log(threshold);
           if (distance <= threshold)
             idx++;
 
