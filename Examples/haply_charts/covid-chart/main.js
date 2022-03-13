@@ -44,7 +44,10 @@ for (let i = 0; i < chartData.length - 1; i += 1) {
   //   filt_coords.push(pos)
   // }
 
-  filt_coords.push({ x: chartData[i].x, y: chartData[i].y })
+  filt_coords.push({
+    x: chartData[i].x * 0.7227 + 0.004,
+    y: chartData[i].y * 0.714 + 0.0133// 0.5919 + 0.019
+  })
 }
 
 console.table(filt_coords)
@@ -186,13 +189,13 @@ function createCanvas() {
     //update endEffector
     endEffector.x = deviceOrigin.x + xE - 125;
     endEffector.y = deviceOrigin.y + yE - 70;
-    endEffector.draw();
+    //endEffector.draw();
   }
 
 
 
   border.draw();
-  endEffector.draw();
+  //endEffector.draw();
 
 }
 

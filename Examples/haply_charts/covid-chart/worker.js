@@ -1,4 +1,4 @@
-var distThreshold = 0.015;
+var distThreshold = 0.017;
 
 var widgetOne;
 var pantograph;
@@ -14,6 +14,8 @@ var positions = new Vector(0, 0);
 var posEE = new Vector(0, 0);
 var prevPosEE = new Vector(0, 0);
 var fDamping = new Vector(0, 0);
+var velocityEE = new Vector(0, 0);
+var prevVelocityEE = new Vector(0, 0);
 
 // get force needed for torques
 let force = new Vector(0, 0);
@@ -118,6 +120,8 @@ self.addEventListener("message", async function (e) {
     posEE.set(device_to_graphics(positions));
     convPosEE = posEE.clone();
 
+    //console.log(convPosEE);
+
     switch (mode) {
       case Mode.Idle: {
         tStartWaitTime = Date.now();
@@ -126,19 +130,26 @@ self.addEventListener("message", async function (e) {
       }
       case Mode.Wait: {
         if (Date.now() - tStartWaitTime > 500) { // wait
-          idx = 1;
+          idx = 0;
           mode = Mode.MoveToFirstPoint;
+          tRefreshRate = Date.now();
         }
         break;
       }
       case Mode.MoveToFirstPoint: {
-        moveToPos(coords[0]);
-        tFirstPointWaitTime = Date.now();
-        mode = Mode.WaitAtFirstPoint;
+        const xDiff = coords[0].subtract(convPosEE.clone()).mag()
+        //        console.log(xDiff);
+        if (xDiff < 0.014) {
+          tFirstPointWaitTime = Date.now();
+          mode = Mode.WaitAtFirstPoint;
+        }
+        //moveToPos(coords[0]);
+        console.log("diff", xDiff)
+        moveToFirstPoint(coords[0]);
         break;
       }
       case Mode.WaitAtFirstPoint: {
-        if (Date.now() - tFirstPointWaitTime > 2000) {
+        if (Date.now() - tFirstPointWaitTime > 1500) {
           tPointToPointTime = Date.now();
           mode = Mode.Guidance;
         }
@@ -151,12 +162,12 @@ self.addEventListener("message", async function (e) {
           console.log(idx, forces);
           break;
         }
-        if (Date.now() - tPointToPointTime > 2) {
+        if (Date.now() - tPointToPointTime > 3) {
           const v = new Vector(coords[idx].x, coords[idx].y);
           const curr = posEE.clone();
           const distance = curr.subtract(v).mag();
 
-          const threshold = idx <= 3 ? 0.025 : distThreshold;
+          const threshold = idx <= 3 ? 0.015 : distThreshold;
           //console.log(threshold);
           if (distance <= threshold)
             idx++;
@@ -191,8 +202,93 @@ self.addEventListener("message", async function (e) {
   /**********  END CONTROL LOOP CODE *********************/
 });
 
+ifx = -4;
+ify = 4;
+
+fx = ifx;
+fy = ify;
+p = false;
+tRefreshRate = Number.POSITIVE_INFINITY;
+tRefreshTime = 10;
+let cumError = 0;
+
+function moveToFirstPoint(vector) {
+  if (vector == undefined)
+    return;
+
+  // find the distance between our current position and target
+  const targetPos = new Vector(vector.x, vector.y);
+  //console.log(targetPos);
+  const xDiff = targetPos.subtract(posEE.clone());
+  const kx = xDiff.multiply(100);//.multiply(springConstMultiplier);
+  fx = kx.x;// / 2;
+  fy = kx.y;// / 2;
+
+  console.log(fx, fy);
+
+  // // D controller
+  const dx = (posEE.clone()).subtract(prevPosEE);
+  const dt = 1 / 1000;
+  const c = 15000;//
+  // const dxdt = dx.divide(dt);
+  const ki = 12;
+
+  prevVelocityEE = velocityEE;
+  velocityEE = dx.multiply(dt)
+  var velocityDelta = velocityEE.subtract(prevVelocityEE);
+
+  // // I controller
+  cumError = dx.add(dx.multiply(dt));
+
+  fx = fx + cumError.x * ki + velocityDelta.x * c;
+  fy = fy + cumError.y * ki + velocityDelta.y * c;
+  // //const cdxdt = dxdt.multiply(kd);
+
+  // //const acceleration = (velocityEE.subtract(prevVelocityEE)).divide(dt);
+  // //console.log(velocityEE);
+
+  // if (Date.now() - tRefreshRate > tRefreshTime) {
+  //   if (xDiff.mag() > 0.02) {
+
+  //     if (p) {
+  //       //if (fx > -3)
+  //       fx = fx - xDiff.multiply(0.01).x - velocityEE.x * c - cumError.x * ki;
+  //       fy = 1;
+  //     }
+
+  //     else if (!p && velocityEE.mag() == 0) {
+  //       if (Math.abs(fx) > 5.4) {
+  //         fx = 0.5 * fx;
+  //         fy = 0.5 * fy;
+  //         p = true;
+  //       }
+  //       else {
+  //         fx += xDiff.clone().multiply(0.1).x + velocityEE.x * c + cumError.x * ki;
+  //         fy += xDiff.clone().multiply(0.1).y + velocityEE.y * c + cumError.y * ki;
+  //       }
+  //     }
+  //   }
+  //   tRefreshRate = Date.now();
+  // }
+  // console.log(fx, fy);
+
+  // const constrainedMax = 6;
+
+  // fx = constrain(fx, -2, 2);
+  // fy = constrain(fy, -2, 2);
+
+  force.set(fx, fy);
+  fEEPrev2 = fEEPrev.clone();
+  fEEPrev = force.clone();
+
+  //console.log(idx, force.x, force.y);
+  fEE.set(graphics_to_device(force));
+}
+
+months = [1020, 1190, 1320, 1410, 1540, 1640, 1705, 1800, 2020];
+
 function moveToPos(vector,
-  springConstMultiplier = 1.16,
+  springConstMultiplier = 1.8,
   ki = 0.0,
   kd = 0.03) {
 
@@ -200,7 +296,7 @@ function moveToPos(vector,
     return;
 
   // find the distance between our current position and target
-  const targetPos = new Vector(vector.x, vector.y);
+  const targetPos = new Vector(vector.x + 0.01, vector.y);
   const xDiff = targetPos.subtract(posEE.clone());
   const kx = xDiff.multiply(200).multiply(springConstMultiplier);
 
@@ -247,13 +343,17 @@ function moveToPos(vector,
     fy = constrain(fy, -constrainedMax, constrainedMax);
 
   }
-  force.set(fx, fy);
+  // tuning
+  if ((idx > 1200 && idx < 1400) || ((idx > 480 && idx < 640))) {
+    force.add(0, 0.5);
+  }
 
+  force.set(fx, fy);
   fEEPrev3 = fEEPrev2.clone();
   fEEPrev2 = fEEPrev.clone();
   fEEPrev = force.clone();
 
-  //console.log(idx, performance.now(), force.x, force.y);
+  console.log(idx, performance.now(), force.x, force.y);
   fEE.set(graphics_to_device(force));
 }
 
@@ -353,7 +453,7 @@ function upsample(pointArray, k = 2000) {
 }
 
 function atHomePos() {
-  return idx == 1 ? true : false;
+  return idx == 0 ? true : false;
 }
 
 function device_to_graphics(deviceFrame) {
