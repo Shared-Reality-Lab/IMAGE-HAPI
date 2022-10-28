@@ -1,4 +1,4 @@
-# auditory-haptic-graphics-HAPI
+# IMAGE-HAPI
 This repository contains both the java and JS/TS versions of the HAPI (Haply's API) 
 
 It also contains some examples
