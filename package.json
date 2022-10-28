@@ -1,0 +1,21 @@
+{
+  "name": "image-hapi",
+  "version": "4.0.0",
+  "description": "A TypeScript port of Haply's hAPI",
+  "main": "src/hAPI.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI.git"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI/issues"
+  },
+  "homepage": "https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI#readme",
+  "devDependencies": {
+    "@types/chrome": "^0.0.200",
+    "@types/w3c-web-serial": "^1.0.3",
+    "typescript": "^4.8.4"
+  }
+}
