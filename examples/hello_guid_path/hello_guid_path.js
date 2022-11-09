@@ -88,7 +88,7 @@ async function workerSetup() {
 
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_guid_path_worker.js");
+  worker = new Worker("hello_guid_path_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
   worker.addEventListener("message", function (msg) {
 

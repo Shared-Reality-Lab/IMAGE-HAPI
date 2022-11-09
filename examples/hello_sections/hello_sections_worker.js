@@ -1,4 +1,5 @@
-
+import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from "../../dist/hAPI.js";
+import { Vector } from "../../libraries/vector.js";
 
 function closeWorker() {
   console.log("worker before close");
@@ -8,11 +9,11 @@ function closeWorker() {
 }
 
 var message = "";
-updateMess = function (mess) {
+var updateMess = function (mess) {
   message = mess;
 }
 
-getMessage = async function (m) {
+var getMessage = async function (m) {
   if (message == "") {
     return "connect";
   }
@@ -30,7 +31,7 @@ var pantograph;
 var worker;
 
 var widgetOneID = 5;
-self.importScripts("libraries/vector.js");
+//self.importScripts("libraries/vector.js");
 var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
@@ -46,6 +47,8 @@ var rEE = 0.006;
 
 var bAir = 0.0;  // kg/s
 var dt = 1 / 1000.0;
+
+var fEE = new Vector(0, 0);
 
 /* virtual wall parameters */
 var fWall = new Vector(0, 0);
@@ -65,13 +68,13 @@ self.addEventListener("message", async function (e) {
   /**************IMPORTING HAPI FILES*****************/
 
 
-  self.importScripts("libraries/Board.js");
-  self.importScripts("libraries/Actuator.js");
-  self.importScripts("libraries/Sensor.js");
-  self.importScripts("libraries/Pwm.js");
-  self.importScripts("libraries/Device.js");
-  self.importScripts("libraries/Pantograph.js");
-  self.importScripts("libraries/NewPantograph.js");
+  //self.importScripts("../../dist/Board.js");
+  //self.importScripts("../../dist/Actuator.js");
+  //self.importScripts("../../dist/Sensor.js");
+  //self.importScripts("../../dist/Pwm.js");
+  //self.importScripts("../../dist/Device.js");
+  //self.importScripts("../../dist/Pantograph.js");
+  //self.importScripts("../../dist/NewPantograph.js");
 
 
 
@@ -84,7 +87,7 @@ self.addEventListener("message", async function (e) {
   widgetOne = new Device(widgetOneID, haplyBoard);
 
   if(newPantograph == 1){
-    pantograph = new NewPantograph();
+    pantograph = new Panto2DIYv3();
     widgetOne.set_mechanism(pantograph);
   
     widgetOne.add_actuator(1, 1, 2); //CCW
@@ -93,7 +96,7 @@ self.addEventListener("message", async function (e) {
     widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
     widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
   }else{
-    pantograph = new Pantograph();
+    pantograph = new Panto2DIYv1();
     widgetOne.set_mechanism(pantograph);
   
     widgetOne.add_actuator(1, 1, 2); //CCW
@@ -159,8 +162,7 @@ self.addEventListener("message", async function (e) {
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 
-    renderingForce = false;
-
+    
     // run every 1 ms
     await new Promise(r => setTimeout(r, 1));
   }
