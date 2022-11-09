@@ -138,7 +138,8 @@ async function workerSetup() {
 
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_2_balls_worker.js");
+  //worker = new Worker("hello_2_balls_worker.js");
+  worker = new Worker("hello_2_balls_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
   worker.addEventListener("message", function (msg) {
 

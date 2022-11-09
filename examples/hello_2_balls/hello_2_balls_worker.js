@@ -1,4 +1,5 @@
-import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from '../../dist/hAPI.js';
+import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from "../../dist/hAPI.js";
+import { Vector } from "../../libraries/vector.js";
 
 function closeWorker() {
   console.log("worker before close");
@@ -8,11 +9,11 @@ function closeWorker() {
 }
 
 var message = "";
-updateMess = function (mess) {
+var updateMess = function (mess) {
   message = mess;
 }
 
-getMessage = async function (m) {
+var getMessage = async function (m) {
   if (message == "") {
     return "connect";
   }
@@ -30,7 +31,7 @@ var pantograph;
 var worker;
 
 var widgetOneID = 5;
-self.importScripts("libraries/vector.js");
+//self.importScripts("libraries/vector.js");
 var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
@@ -78,6 +79,7 @@ var dt = 1 / 1000.0;
 var fGravity1 = new Vector(0, 9.8 * mBall1);
 var fGravity2 = new Vector(0, 9.8 * mBall2);
 
+var fEE = new Vector(0, 0);
 var fBall1 = new Vector(0, 0);
 var fBall2 = new Vector(0, 0);
 var fContact1 = new Vector(0, 0);
@@ -101,7 +103,7 @@ var posWallBottom = new Vector(0.0, 0.1);
 var posWallTop = new Vector(0.0, 0.03);
 
 var haplyBoard;
-var newPantograph = 0;
+var newPantograph = 1;
 
 self.addEventListener("message", async function (e) {
 
@@ -301,8 +303,7 @@ self.addEventListener("message", async function (e) {
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 
-    renderingForce = false;
-
+    
     // run every 1 ms
     await new Promise(r => setTimeout(r, 1));
   }

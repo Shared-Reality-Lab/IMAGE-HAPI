@@ -1,3 +1,5 @@
 node_modules
 dist
-examples/*/libraries
+examples/*/libraries/*.js
+libraries/*.js
+!libraries/vector.js
