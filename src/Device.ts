@@ -20,7 +20,6 @@ import { Pwm } from "./Pwm.js";
 import { Actuator } from "./Actuator.js";
 import { Sensor } from "./Sensor.js";
 import { Board } from "./Board.js";
-import { Pantograph } from "./Pantograph.js";
 
 class Device {
 
