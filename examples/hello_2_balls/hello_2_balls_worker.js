@@ -1,4 +1,4 @@
-
+import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from '../../dist/hAPI.js';
 
 function closeWorker() {
   console.log("worker before close");
@@ -101,20 +101,20 @@ var posWallBottom = new Vector(0.0, 0.1);
 var posWallTop = new Vector(0.0, 0.03);
 
 var haplyBoard;
-var newPantograph = 1;
+var newPantograph = 0;
 
 self.addEventListener("message", async function (e) {
 
   /**************IMPORTING HAPI FILES*****************/
+  
 
-
-  self.importScripts("libraries/Board.js");
-  self.importScripts("libraries/Actuator.js");
-  self.importScripts("libraries/Sensor.js");
-  self.importScripts("libraries/Pwm.js");
-  self.importScripts("libraries/Device.js");
-  self.importScripts("libraries/Pantograph.js");
-  self.importScripts("libraries/NewPantograph.js");
+  //self.importScripts("../../dist/Board.js");
+  //self.importScripts("../../dist/Actuator.js");
+  //self.importScripts("../../dist/Sensor.js");
+  //self.importScripts("../../dist/Pwm.js");
+  //self.importScripts("../../dist/Device.js");
+  //self.importScripts("../../dist/Pantograph.js");
+  //self.importScripts("../../dist/NewPantograph.js");
 
 
 
@@ -127,7 +127,7 @@ self.addEventListener("message", async function (e) {
   widgetOne = new Device(widgetOneID, haplyBoard);
 
   if(newPantograph == 1){
-    pantograph = new NewPantograph();
+    pantograph = new Panto2DIYv3();
     widgetOne.set_mechanism(pantograph);
   
     widgetOne.add_actuator(1, 1, 2); //CCW
@@ -136,7 +136,7 @@ self.addEventListener("message", async function (e) {
     widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
     widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
   }else{
-    pantograph = new Pantograph();
+    pantograph = new Panto2DIYv1();
     widgetOne.set_mechanism(pantograph);
   
     widgetOne.add_actuator(1, 1, 2); //CCW
