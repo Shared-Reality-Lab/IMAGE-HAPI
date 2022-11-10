@@ -62,7 +62,7 @@ var kd = 1.5; // kd += 0.1;
 var smoothing = 0.8; // smoothing += 0.01;
 var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
-var randy = new Vector(0, 0.025);
+var randy = new Vector(0, 0.045);
 
 var haplyBoard;
 var newPantograph = 1;
@@ -100,6 +100,9 @@ self.addEventListener("message", async function (e) {
   
     widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
     widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
+
+    randy.x = randGen(-0.07, 0.05);
+    randy.y = randGen(0.045, 0.1);
   }else{
     pantograph = new Panto2DIYv1();
     widgetOne.set_mechanism(pantograph);
@@ -109,13 +112,13 @@ self.addEventListener("message", async function (e) {
   
     widgetOne.add_encoder(1, 1, 241, 10752, 2);
     widgetOne.add_encoder(2, 0, -61, 10752, 1);
+    
+    randy.x = randGen(-0.1, 0.1);
+    randy.y = randGen(0.025, 0.1);
   }
 
   var run_once = false;
-
-  randy.x = randGen(-0.1, 0.1);
-  randy.y = randGen(0.025, 0.1);
-
+  
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/

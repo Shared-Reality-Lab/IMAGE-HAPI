@@ -24,7 +24,7 @@ var torques = new p5.Vector(0, 0);
 /* task space */
 var posEE = new p5.Vector(0, 0);
 var fEE = new p5.Vector(0, 0);
-var randy = new p5.Vector(0, 0.025);
+var randy = new p5.Vector(0, 0.045);
 
 /* device graphical position */
 var deviceOrigin = new p5.Vector(0, 0);
