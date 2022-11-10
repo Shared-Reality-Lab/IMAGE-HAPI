@@ -1,5 +1,5 @@
 import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from "../../dist/hAPI.js";
-import { Vector } from "../../libraries/vector.js";
+import { Vector } from "../libraries/vector.js";
 
 function closeWorker() {
   console.log("worker before close");
@@ -23,15 +23,11 @@ var getMessage = async function (m) {
 
 }
 
-var counter = 0;
-var msgcount = 0;
 var runLoop = true
 var widgetOne;
 var pantograph;
-var worker;
 
 var widgetOneID = 5;
-//self.importScripts("libraries/vector.js");
 var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
@@ -44,10 +40,6 @@ var prevPosEE = new Vector(0, 0);
 var posEE = new Vector(0, 0);
 var fCalc = new Vector(0, 0);
 var fEE = new Vector(0, 0);
-
-var rEE = 0.006;
-
-var dt = 1 / 1000.0;
 
 var oldTime = 0;
 
@@ -146,15 +138,6 @@ function upsample(pointArray, k = 2000) {
   return [...upsampledSeg];
 }
 
-function randGen(min, max){
-  return Math.random() * (max - min) + min;
-}
-
-function resetIntegrator(){
-  cumError.x = 0.0;
-  cumError.y = 0.0;
-}
-
 function constrain(n, min, max){
   if (n < max && n > min){
     return n;
@@ -166,18 +149,6 @@ function constrain(n, min, max){
 }
 
 self.addEventListener("message", async function (e) {
-
-  /**************IMPORTING HAPI FILES*****************/
-
-
-  //self.importScripts("../../dist/Board.js");
-  //self.importScripts("../../dist/Actuator.js");
-  //self.importScripts("../../dist/Sensor.js");
-  //self.importScripts("../../dist/Pwm.js");
-  //self.importScripts("../../dist/Device.js");
-  //self.importScripts("../../dist/Pantograph.js");
-  //self.importScripts("../../dist/NewPantograph.js");
-
 
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
@@ -208,20 +179,12 @@ self.addEventListener("message", async function (e) {
   }
 
   var run_once = false;
-  var g = new Vector(10, 20, 2);
 
   idx = 0;
   
-  //for(var i=0; i<starFus.length; i++){
-  //  console.log("("+ starFus[i].x + "," + starFus[i].y + ")");
-  //}
-
-  //widgetOne.device_set_parameters();
-
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
-  // self.importScripts("runLoop.js")
   while (true) {
 
     if (!run_once) {

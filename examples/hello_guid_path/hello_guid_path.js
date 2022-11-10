@@ -1,16 +1,4 @@
-var haplyBoard;
-var widgetOne;
-var pantograph;
 var worker;
-
-var widgetOneID = 5;
-var CW = 0;
-var CCW = 1;
-var renderingForce = false;
-
-/* framerate definition ************************************************************************************************/
-var baseFrameRate = 120;
-/* end framerate definition ********************************************************************************************/
 
 /* elements definition *************************************************************************************************/
 
@@ -58,27 +46,20 @@ var pGraph, joint1, joint2, endEffector, target;
 
 function setup() {
   createCanvas(1200, 1200);
-
   /* visual elements setup */
-  //background(0);
   deviceOrigin.add(worldPixelWidth / 2, 0);
-
   /* create pantagraph graphics */
   create_pantagraph();
 }
 
 function draw() {
-
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  //  if(renderingForce == false){
   background(255);
   update_animation(this.angles.x * radsPerDegree,
     this.angles.y * radsPerDegree,
     this.posEE.x,
     this.posEE.y);
-  //  }
 }
-
 
 
 async function workerSetup() {
@@ -91,9 +72,7 @@ if (window.Worker) {
   worker = new Worker("hello_guid_path_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
   worker.addEventListener("message", function (msg) {
-
     //retrieve data from worker.js needed for update_animation()
-    //TODO: find a more elegant way to retrieve the variables
     angles.x = msg.data[0];
     angles.y = msg.data[1];
     posEE.x = msg.data[2];
@@ -109,8 +88,6 @@ else {
 
 /* helper functions section, place helper functions here ***************************************************************/
 function create_pantagraph() {
-  var lAni = pixelsPerMeter * l;
-  var LAni = pixelsPerMeter * L;
   var rEEAni = pixelsPerMeter * rEE;
 
   joint1 = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
@@ -182,7 +159,6 @@ function update_animation(th1, th2, xE, yE) {
     var v4x = deviceOrigin.x + lAni * cos(th2) - 38e-3 * pixelsPerMeter;
     var v4y = deviceOrigin.y + lAni * sin(th2);
 
-    // background(255);
     // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
     this.pGraph = beginShape();
 
@@ -204,7 +180,6 @@ function update_animation(th1, th2, xE, yE) {
     var v3x = deviceOrigin.x + lAni * cos(th2);
     var v3y = deviceOrigin.y + lAni * sin(th2);
 
-    // background(255);
     // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
     this.pGraph = beginShape();
     

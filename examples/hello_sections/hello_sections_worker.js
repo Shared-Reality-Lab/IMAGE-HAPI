@@ -1,5 +1,5 @@
 import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from "../../dist/hAPI.js";
-import { Vector } from "../../libraries/vector.js";
+import { Vector } from "../libraries/vector.js";
 
 function closeWorker() {
   console.log("worker before close");
@@ -23,31 +23,22 @@ var getMessage = async function (m) {
 
 }
 
-var counter = 0;
-var msgcount = 0;
 var runLoop = true
 var widgetOne;
 var pantograph;
-var worker;
 
 var widgetOneID = 5;
-//self.importScripts("libraries/vector.js");
 var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
 
 /* task space */
 var posEE = new Vector(0, 0);
-var posEE_copy = new Vector(0, 0);
 var posEELast = new Vector(0, 0);
 var velEE = new Vector(0, 0);
-dt = 1 / 1000.0;
-
-var rEE = 0.006;
-
-var bAir = 0.0;  // kg/s
 var dt = 1 / 1000.0;
 
+var rEE = 0.006;
 var fEE = new Vector(0, 0);
 
 /* virtual wall parameters */
@@ -64,19 +55,6 @@ var haplyBoard;
 var newPantograph = 1;
 
 self.addEventListener("message", async function (e) {
-
-  /**************IMPORTING HAPI FILES*****************/
-
-
-  //self.importScripts("../../dist/Board.js");
-  //self.importScripts("../../dist/Actuator.js");
-  //self.importScripts("../../dist/Sensor.js");
-  //self.importScripts("../../dist/Pwm.js");
-  //self.importScripts("../../dist/Device.js");
-  //self.importScripts("../../dist/Pantograph.js");
-  //self.importScripts("../../dist/NewPantograph.js");
-
-
 
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
@@ -107,13 +85,10 @@ self.addEventListener("message", async function (e) {
   }
 
   var run_once = false;
-  var g = new Vector(10, 20, 2);
-  //widgetOne.device_set_parameters();
 
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
-  // self.importScripts("runLoop.js")
   while (true) {
 
     if (!run_once) {

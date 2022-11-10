@@ -1,5 +1,5 @@
 import { Actuator, Board, Device, Pwm, Sensor, Panto2DIYv1, Panto2DIYv3 } from "../../dist/hAPI.js";
-import { Vector } from "../../libraries/vector.js";
+import { Vector } from "../libraries/vector.js";
 
 function closeWorker() {
   console.log("worker before close");
@@ -23,25 +23,19 @@ var getMessage = async function (m) {
 
 }
 
-var counter = 0;
-var msgcount = 0;
 var runLoop = true
 var widgetOne;
 var pantograph;
-var worker;
 
 var widgetOneID = 5;
-//self.importScripts("libraries/vector.js");
 var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
 
 /* task space */
 var posEE = new Vector(0, 0);
-var posEE_copy = new Vector(0, 0);
 var posEELast = new Vector(0, 0);
 var velEE = new Vector(0, 0);
-dt = 1 / 1000.0;
 
 var posBall1 = new Vector(0.025, 0.05);
 var velBall1 = new Vector(0, 0);
@@ -59,8 +53,6 @@ var velEEToBall2;
 var velEEToBall2Magnitude;
 
 var rEE = 0.006;
-var rEEContact1 = 0.006;
-var rEEContact2 = 0.006;
 
 var rBall1 = 0.02;
 var mBall1 = 0.05;  // kg
@@ -87,8 +79,6 @@ var fContact2 = new Vector(0, 0);
 var fDamping1 = new Vector(0, 0);
 var fDamping2 = new Vector(0, 0);
 
-var test = new Vector(0, 0);
-
 /* virtual wall parameters */
 var fWall1 = new Vector(0, 0);
 var fWall2 = new Vector(0, 0);
@@ -106,19 +96,6 @@ var haplyBoard;
 var newPantograph = 1;
 
 self.addEventListener("message", async function (e) {
-
-  /**************IMPORTING HAPI FILES*****************/
-  
-
-  //self.importScripts("../../dist/Board.js");
-  //self.importScripts("../../dist/Actuator.js");
-  //self.importScripts("../../dist/Sensor.js");
-  //self.importScripts("../../dist/Pwm.js");
-  //self.importScripts("../../dist/Device.js");
-  //self.importScripts("../../dist/Pantograph.js");
-  //self.importScripts("../../dist/NewPantograph.js");
-
-
 
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
@@ -149,13 +126,10 @@ self.addEventListener("message", async function (e) {
   }
 
   var run_once = false;
-  var g = new Vector(10, 20, 2);
-  //widgetOne.device_set_parameters();
 
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
-  // self.importScripts("runLoop.js")
   while (true) {
 
     if (!run_once) {
@@ -190,8 +164,6 @@ self.addEventListener("message", async function (e) {
 
     /* ball1 forces */
     if (penBall1 < 0) {
-      rEEContact1 = rEE + penBall1;
-
       fContact1 = posEEToBall1.normalize();
 
       velEEToBall1 = velBall1.clone().subtract(velEE);
@@ -202,14 +174,12 @@ self.addEventListener("message", async function (e) {
       fContact1 = fContact1.multiply((-kBall1 * penBall1) - (bBall1 * velEEToBall1Magnitude));
     }
     else {
-      rEEContact1 = rEE;
       fContact1.set(0, 0);
     }
     /* end ball1 forces */
 
     /* ball2 forces */
     if (penBall2 < 0) {
-      rEEContact2 = rEE + penBall2;
 
       fContact2 = posEEToBall2.normalize();
 
@@ -221,7 +191,6 @@ self.addEventListener("message", async function (e) {
       fContact2 = fContact2.multiply((-kBall2 * penBall2) - (bBall2 * velEEToBall2Magnitude));
     }
     else {
-      rEEContact2 = rEE;
       fContact2.set(0, 0);
     }
     /* end ball2 forces*/
@@ -284,18 +253,17 @@ self.addEventListener("message", async function (e) {
     fBall1 = (fContact1.clone()).add(fGravity1).add(fDamping1).add(fWall1);
     fBall2 = (fContact2.clone()).add(fGravity2).add(fDamping2).add(fWall2);
     fEE = (fContact1.clone()).multiply(-1).add((fContact2.clone()).multiply(-1));
-    // fEE.set(graphics_to_device(fEE));
     /* end sum of forces */
 
-    // /* dynamic state of ball1 calculation (integrate acceleration of ball1) */
+    /* dynamic state of ball1 calculation (integrate acceleration of ball1) */
     posBall1 = (((fBall1.clone()).divide(2 * mBall1)).multiply(dt * dt)).add((velBall1.clone()).multiply(dt)).add(posBall1);
     velBall1 = (((fBall1.clone()).divide(mBall1)).multiply(dt)).add(velBall1);
-    // /*end dynamic state of ball1 calculation */
+    /*end dynamic state of ball1 calculation */
 
-    // /* dynamic state of ball2 calculation (integrate acceleration of ball2) */
+    /* dynamic state of ball2 calculation (integrate acceleration of ball2) */
     posBall2 = (((fBall2.clone()).divide(2 * mBall2)).multiply(dt * dt)).add((velBall2.clone()).multiply(dt)).add(posBall2);
     velBall2 = (((fBall2.clone()).divide(mBall2)).multiply(dt)).add(velBall2);
-    // /*end dynamic state of ball2 calculation */
+    /*end dynamic state of ball2 calculation */
 
     var data = [angles[0], angles[1], positions[0], positions[1], posBall1, posBall2, newPantograph]
     this.self.postMessage(data);

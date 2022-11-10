@@ -1,16 +1,4 @@
-var haplyBoard;
-var widgetOne;
-var pantograph;
 var worker;
-
-var widgetOneID = 5;
-var CW = 0;
-var CCW = 1;
-var renderingForce = false;
-
-/* framerate definition ************************************************************************************************/
-var baseFrameRate = 120;
-/* end framerate definition ********************************************************************************************/
 
 /* elements definition *************************************************************************************************/
 
@@ -26,38 +14,12 @@ var newPantograph = 0;
 
 /* end effector radius in meters */
 var rEE = 0.006;
-var rEEContact = 0.006;
 
 /* virtual ball parameters  */
 var rBall = 0.02;
-
-var mBall = 0.15;  // kg
-var kBall = 445;  // N/m
-var bBall = 3.7;
-var penBall = 0.0;  // m
-var bAir = 0.0;  // kg/s
-var fGravity = new p5.Vector(0, 9.8 * mBall);
-var dt = 1 / 1000.0;
-
 var posBall = new p5.Vector(0, 0.05);
-var velBall = new p5.Vector(0, 0);
-
-var fBall = new p5.Vector(0, 0);
-var fContact = new p5.Vector(0, 0);
-var fDamping = new p5.Vector(0, 0);
-
-var posEEToBall;
-var posEEToBallMagnitude;
-
-var velEEToBall;
-var velEEToBallMagnitude;
 
 /* virtual wall parameters */
-var fWall = new p5.Vector(0, 0);
-var kWall = 800; // N/m
-var bWall = 2; // kg/s
-var penWall = new p5.Vector(0, 0);
-
 var posWallLeft = new p5.Vector(-0.07, 0.03);
 var posWallRight = new p5.Vector(0.07, 0.03);
 var posWallBottom = new p5.Vector(0.0, 0.1);
@@ -69,10 +31,6 @@ var torques = new p5.Vector(0, 0);
 
 /* task space */
 var posEE = new p5.Vector(0, 0);
-var posEELast = new p5.Vector(0, 0);
-var velEE = new p5.Vector(0, 0);
-
-var fEE = new p5.Vector(0, 0);
 
 /* device graphical position */
 var deviceOrigin = new p5.Vector(0, 0);
@@ -93,27 +51,20 @@ var rightWall;
 
 function setup() {
   createCanvas(1200, 1200);
-
   /* visual elements setup */
-  //background(0);
   deviceOrigin.add(worldPixelWidth / 2, 0);
-
   /* create pantagraph graphics */
   create_pantagraph();
 }
 
 function draw() {
-
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
-  //  if(renderingForce == false){
   background(255);
   update_animation(this.angles.x * radsPerDegree,
     this.angles.y * radsPerDegree,
     this.posEE.x,
     this.posEE.y);
-  //  }
 }
-
 
 
 async function workerSetup() {
@@ -126,9 +77,7 @@ if (window.Worker) {
   worker = new Worker("hello_ball_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
   worker.addEventListener("message", function (msg) {
-
     //retrieve data from worker.js needed for update_animation()
-    //TODO: find a more elegant way to retrieve the variables
     angles.x = msg.data[0];
     angles.y = msg.data[1];
     posEE.x = msg.data[2];
@@ -146,8 +95,6 @@ else {
 
 /* helper functions section, place helper functions here ***************************************************************/
 function create_pantagraph() {
-  var lAni = pixelsPerMeter * l;
-  var LAni = pixelsPerMeter * L;
   var rEEAni = pixelsPerMeter * rEE;
 
   joint1 = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
@@ -232,7 +179,6 @@ function update_animation(th1, th2, xE, yE) {
     var v4x = deviceOrigin.x + lAni * cos(th2) - 38e-3 * pixelsPerMeter;
     var v4y = deviceOrigin.y + lAni * sin(th2);
 
-    // background(255);
     // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
     this.pGraph = beginShape();
 
@@ -254,7 +200,6 @@ function update_animation(th1, th2, xE, yE) {
     var v3x = deviceOrigin.x + lAni * cos(th2);
     var v3y = deviceOrigin.y + lAni * sin(th2);
 
-    // background(255);
     // p5.js doesn't seem to have setVertex, so the coordinates are set in order rather than using an index 
     this.pGraph = beginShape();
     
