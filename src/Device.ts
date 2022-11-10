@@ -16,11 +16,10 @@
  *
  * This is based on the hAPI library by Haply Robotics <https://gitlab.com/Haply/hAPI>.
  */
-import { Pwm } from "./Pwm";
-import { Actuator } from "./Actuator";
-import { Sensor } from "./Sensor";
-import { Board } from "./Board";
-import { Pantograph } from "./Pantograph";
+import { Pwm } from "./Pwm.js";
+import { Actuator } from "./Actuator.js";
+import { Sensor } from "./Sensor.js";
+import { Board } from "./Board.js";
 
 class Device {
 
