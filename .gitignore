@@ -1,4 +1,2 @@
 node_modules
 dist
-libraries/*.js
-!libraries/vector.js
