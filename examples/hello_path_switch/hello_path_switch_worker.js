@@ -64,13 +64,13 @@ var smoothing = 0.80; // smoothing += 0.01;
 var looptime = 2; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
 /* function parameters 1 */
-const pArray1 = [[-0.06, 0.035], [0.05, 0.06]]
-const pFunc1 = pArray1.map(([x,y]) => (new Vector(x, y + 0.02)))
+const pArray1 = [[-0.05, 0.035], [0.05, 0.06]]
+const pFunc1 = pArray1.map(([x,y]) => (new Vector(x, y + 0.01)))
 const pInt1 = upsample(pFunc1, 3000);
 
 /* function parameters 2 */
-const pArray2 = [[0.05, 0.075], [-0.06, 0.1]]
-const pFunc2 = pArray2.map(([x,y]) => (new Vector(x, y + 0.02)))
+const pArray2 = [[0.05, 0.075], [-0.05, 0.1]]
+const pFunc2 = pArray2.map(([x,y]) => (new Vector(x, y + 0.01)))
 const pInt2 = upsample(pFunc2, 3000);
 
 /* both functions in one array */
@@ -80,6 +80,7 @@ var idxPoint;
 
 var haplyBoard;
 var newPantograph = 1;
+var stop = false;
 
 function upsample(pointArray, k = 2000) {
   let upsampledSeg = [];
@@ -156,116 +157,123 @@ function constrain(n, min, max){
 }
 
 self.addEventListener("message", async function (e) {
-
-  /************ BEGIN SETUP CODE *****************/
-  console.log('in worker');
-  haplyBoard = new Board();
-  await haplyBoard.init();
-  console.log(haplyBoard);
-
-  widgetOne = new Device(widgetOneID, haplyBoard);
-
-  if(newPantograph == 1){
-    pantograph = new Panto2DIYv3();
-    widgetOne.set_mechanism(pantograph);
-  
-    widgetOne.add_actuator(1, 1, 2); //CCW
-    widgetOne.add_actuator(2, 1, 1); //CCW
-  
-    widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
-    widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
-
-    kp = 0.06;
-    ki = 3.1;
-    kd = 4.5;
+  if(e.data == "stop"){
+    stop = true;
+  }else if(e.data == "start"){
+    stop = false;
   }else{
-    pantograph = new Panto2DIYv1();
-    widgetOne.set_mechanism(pantograph);
-  
-    widgetOne.add_actuator(1, 1, 2); //CCW
-    widgetOne.add_actuator(2, 0, 1); //CW
-  
-    widgetOne.add_encoder(1, 1, 241, 10752, 2);
-    widgetOne.add_encoder(2, 0, -61, 10752, 1);
+    /************ BEGIN SETUP CODE *****************/
+    console.log('in worker');
+    haplyBoard = new Board();
+    await haplyBoard.init();
+    console.log(haplyBoard);
+
+    widgetOne = new Device(widgetOneID, haplyBoard);
+
+    if(newPantograph == 1){
+      pantograph = new Panto2DIYv3();
+      widgetOne.set_mechanism(pantograph);
     
-    kp = 0.08;
-    ki = 3.1;
-    kd = 4.5;
-    allowedError = 200;
-  }
+      widgetOne.add_actuator(1, 1, 2); //CCW
+      widgetOne.add_actuator(2, 1, 1); //CCW
+    
+      widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
+      widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
 
-  var run_once = false;
-
-  idxPoint = 0;
-  idxSection = 0;
-  
-  /************************ END SETUP CODE ************************* */
-
-  /**********  BEGIN CONTROL LOOP CODE *********************/
-  while (true) {
-
-    if (!run_once) {
-      widgetOne.device_set_parameters();
-      run_once = true;
+      kp = 0.06;
+      ki = 3.1;
+      kd = 4.5;
+    }else{
+      pantograph = new Panto2DIYv1();
+      widgetOne.set_mechanism(pantograph);
+    
+      widgetOne.add_actuator(1, 1, 2); //CCW
+      widgetOne.add_actuator(2, 0, 1); //CW
+    
+      widgetOne.add_encoder(1, 1, 241, 10752, 2);
+      widgetOne.add_encoder(2, 0, -61, 10752, 1);
+      
+      kp = 0.08;
+      ki = 3.1;
+      kd = 4.5;
+      allowedError = 200;
     }
 
-    widgetOne.device_read_data();
-    angles = widgetOne.get_device_angles();
-    positions = widgetOne.get_device_position(angles);
-    posEE.set(positions);
-    posEE.x = -posEE.x; // device_to_graphics function
+    var run_once = false;
 
-    /* haptic physics force calculation */
-    /* forces due to guidance on EE */
-    fCalc.set(0, 0);
+    idxPoint = 0;
+    idxSection = 0;
     
-    var timedif = performance.now() - oldTime;
-    if(timedif > (looptime * 1.05)){
-      console.log("caution, haptic loop took " + timedif.toFixed(2) + " ms");
-    }
+    /************************ END SETUP CODE ************************* */
 
-    error = (pFus[idxSection][idxPoint].subtract(posEE)).multiply(pixelsPerMeter);
-    // console.log(error);
-    errorPosEE = posEE.subtract(prevPosEE);
-    cumError = errorPosEE.add(errorPosEE.multiply(timedif * 0.001));
+    /**********  BEGIN CONTROL LOOP CODE *********************/
+    while (true) {
 
-    //buff = (error.subtract(oldError)).divide(timedif);           
-    //diff = (diff.multiply(smoothing)).add(buff.multiply(1.0 - smoothing));
-    diff = errorPosEE.divide(timedif * 0.001);
-    //oldError = error;
-    oldTime = performance.now();
-    prevPosEE = posEE;
-    
-    fCalc.x = constrain(kp * error.x + ki * cumError.x + kd * diff.x, -4, 4) * -1;
-    fCalc.y = constrain(kp * error.y + ki * cumError.y + kd * diff.y, -4, 4);
-    // console.log(fCalc);
-    /* end forces due to guidance on EE */
+      if (!run_once) {
+        widgetOne.device_set_parameters();
+        run_once = true;
+      }
 
-    /* sum of forces */
-    fEE = fCalc.clone();
-    /* end sum of forces */
+      widgetOne.device_read_data();
+      angles = widgetOne.get_device_angles();
+      positions = widgetOne.get_device_position(angles);
+      posEE.set(positions);
+      posEE.x = -posEE.x; // device_to_graphics function
 
-    if((Math.abs(error.x) < allowedError) && (Math.abs(error.y) < allowedError)){
-      idxPoint++;
-      if(idxPoint >= (pFus[idxSection].length)){
-        idxPoint = 0;
-        idxSection++;
-        if(idxSection >= (pFus.length)){
+      /* haptic physics force calculation */
+      /* forces due to guidance on EE */
+      fCalc.set(0, 0);
+      
+      var timedif = performance.now() - oldTime;
+      if(timedif > (looptime * 1.05)){
+        console.log("caution, haptic loop took " + timedif.toFixed(2) + " ms");
+      }
+
+      error = (pFus[idxSection][idxPoint].subtract(posEE)).multiply(pixelsPerMeter);
+      // console.log(error);
+      errorPosEE = posEE.subtract(prevPosEE);
+      cumError = errorPosEE.add(errorPosEE.multiply(timedif * 0.001));
+
+      //buff = (error.subtract(oldError)).divide(timedif);           
+      //diff = (diff.multiply(smoothing)).add(buff.multiply(1.0 - smoothing));
+      diff = errorPosEE.divide(timedif * 0.001);
+      //oldError = error;
+      oldTime = performance.now();
+      prevPosEE = posEE;
+      
+      fCalc.x = constrain(kp * error.x + ki * cumError.x + kd * diff.x, -4, 4) * -1;
+      fCalc.y = constrain(kp * error.y + ki * cumError.y + kd * diff.y, -4, 4);
+      // console.log(fCalc);
+      /* end forces due to guidance on EE */
+
+      if(stop){
+        fCalc.set(0, 0);
+      }else if((Math.abs(error.x) < allowedError) && (Math.abs(error.y) < allowedError)){
+        idxPoint++;
+        if(idxPoint >= (pFus[idxSection].length)){
           idxPoint = 0;
-          idxSection = 0;
+          idxSection++;
+          if(idxSection >= (pFus.length)){
+            idxPoint = 0;
+            idxSection = 0;
+          }
         }
       }
+
+      /* sum of forces */
+      fEE = fCalc.clone();
+      /* end sum of forces */
+
+      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
+      this.self.postMessage(data);
+
+      widgetOne.set_device_torques(fEE.toArray());
+      widgetOne.device_write_torques();
+
+      
+      // run every ${looptime} ms
+      await new Promise(r => setTimeout(r, looptime));
     }
-
-    var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
-    this.self.postMessage(data);
-
-    widgetOne.set_device_torques(fEE.toArray());
-    widgetOne.device_write_torques();
-
-    
-    // run every ${looptime} ms
-    await new Promise(r => setTimeout(r, looptime));
   }
 
   /**********  END CONTROL LOOP CODE *********************/

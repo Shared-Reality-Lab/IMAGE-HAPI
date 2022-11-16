@@ -16,12 +16,12 @@ var newPantograph = 0;
 var rEE = 0.006;
 
 /* function parameters 1 */
-const pArray1 = [[-0.06, 0.035], [0.05, 0.06]]
-const pFunc1 = pArray1.map(([x,y]) => (new p5.Vector(x, y + 0.02)))
+const pArray1 = [[-0.05, 0.035], [0.05, 0.06]]
+const pFunc1 = pArray1.map(([x,y]) => (new p5.Vector(x, y + 0.01)))
 
 /* function parameters 2 */
-const pArray2 = [[0.05, 0.075], [-0.06, 0.1]]
-const pFunc2 = pArray2.map(([x,y]) => (new p5.Vector(x, y + 0.02)))
+const pArray2 = [[0.05, 0.075], [-0.05, 0.1]]
+const pFunc2 = pArray2.map(([x,y]) => (new p5.Vector(x, y + 0.01)))
 
 /* generic data for a 2DOF device */
 /* joint space */
@@ -68,10 +68,21 @@ async function workerSetup() {
   worker.postMessage("test");
 }
 
+async function toggleWorker() {
+  if(document.getElementById("button2").textContent == "Stop force"){
+    worker.postMessage("stop");
+    document.getElementById("button2").textContent = "Apply force"
+  }else{
+    worker.postMessage("start");
+    document.getElementById("button2").textContent = "Stop force"
+  }
+}
+
 if (window.Worker) {
   // console.log("here");
   worker = new Worker("hello_path_switch_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
+  document.getElementById("button2").addEventListener("click", toggleWorker);
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
     angles.x = msg.data[0];

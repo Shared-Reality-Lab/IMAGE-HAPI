@@ -67,10 +67,21 @@ async function workerSetup() {
   worker.postMessage("test");
 }
 
+async function toggleWorker() {
+  if(document.getElementById("button2").textContent == "Stop force"){
+    worker.postMessage("stop");
+    document.getElementById("button2").textContent = "Apply force"
+  }else{
+    worker.postMessage("start");
+    document.getElementById("button2").textContent = "Stop force"
+  }
+}
+
 if (window.Worker) {
   // console.log("here");
   worker = new Worker("hello_guid_path_worker.js", {type: "module"});
   document.getElementById("button").addEventListener("click", workerSetup);
+  document.getElementById("button2").addEventListener("click", toggleWorker);
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
     angles.x = msg.data[0];
