@@ -24,6 +24,8 @@ var getMessage = async function (m) {
 }
 
 var runLoop = true
+
+/* Device specifications */
 var widgetOne;
 var pantograph;
 
@@ -52,25 +54,32 @@ var velEEToBall1Magnitude;
 var velEEToBall2;
 var velEEToBall2Magnitude;
 
-var rEE = 0.006;
+/* Radius */
+var rEE = 0.006; // end effector
+var rBall1 = 0.02; // ball 1
+var rBall2 = 0.01; // ball 2
 
-var rBall1 = 0.02;
-var mBall1 = 0.05;  // kg
-var kBall1 = 445;  // N/m
-var bBall1 = 3.7;
+/* virtual ball 1 parameters */
+var mBall1 = 0.05;  // mass (kg)
+var kBall1 = 445;  // spring constant (N/m)
+var bBall1 = 3.7; // damping coefficient (kg/s)
+// distance between the surfaces of the ball and EE when they are touching (m)
 var penBall1 = 0.0;  // m
 
-var rBall2 = 0.01;
-var mBall2 = 0.1;  // kg
-var kBall2 = 445;  // N/m
-var bBall2 = 3.7;
+/* virtual ball 2 parameters */
+var mBall2 = 0.1;  // mass (kg)
+var kBall2 = 445;  // spring constant (N/m)
+var bBall2 = 3.7; // damping coefficient (kg/s)
+// distance between the surfaces of the ball and EE when they are touching (m)
 var penBall2 = 0.0;  // m
 
-var bAir = 0.0;  // kg/s
+var bAir = 0.0;  // air damping coefficient (kg/s)
 var dt = 1 / 1000.0;
+/* gravity force for each ball */
 var fGravity1 = new Vector(0, 9.8 * mBall1);
 var fGravity2 = new Vector(0, 9.8 * mBall2);
 
+/* Forces */
 var fEE = new Vector(0, 0);
 var fBall1 = new Vector(0, 0);
 var fBall2 = new Vector(0, 0);
@@ -80,31 +89,41 @@ var fDamping1 = new Vector(0, 0);
 var fDamping2 = new Vector(0, 0);
 
 /* virtual wall parameters */
-var fWall1 = new Vector(0, 0);
-var fWall2 = new Vector(0, 0);
-var kWall = 800; // N/m
-var bWall = 2; // kg/s
+var fWall1 = new Vector(0, 0);  // force by the wall in ball 1
+var fWall2 = new Vector(0, 0);  // force by the wall in ball 2
+var kWall = 800; // spring constant (N/m)
+var bWall = 2; // damping coefficient (kg/s)
+// distances between the surfaces of the wall and ball when they are touching (m)
 var penWall1 = new Vector(0, 0);
 var penWall2 = new Vector(0, 0);
 
+/* wall positions */
 var posWallLeft = new Vector(-0.07, 0.03);
 var posWallRight = new Vector(0.07, 0.03);
 var posWallBottom = new Vector(0.0, 0.1);
 var posWallTop = new Vector(0.0, 0.03);
 
+/* Device version */
+//var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Device variables */
 var haplyBoard;
-var newPantograph = 1;
 
 self.addEventListener("message", async function (e) {
+  /* listen to messages from the main script */
 
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
+  
+  /* initialize device */
   haplyBoard = new Board();
   await haplyBoard.init();
   console.log(haplyBoard);
 
   widgetOne = new Device(widgetOneID, haplyBoard);
 
+  /* configure and declare device specifications according to the version */
   if(newPantograph == 1){
     pantograph = new Panto2DIYv3();
     widgetOne.set_mechanism(pantograph);
@@ -137,6 +156,7 @@ self.addEventListener("message", async function (e) {
       run_once = true;
     }
 
+    /* read and save device status */
     widgetOne.device_read_data();
     angles = widgetOne.get_device_angles();
     positions = widgetOne.get_device_position(angles);
@@ -144,6 +164,7 @@ self.addEventListener("message", async function (e) {
 
     velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
 
+    /* update "previous" variable */
     posEELast = posEE;
 
     /* haptic physics force calculation */
@@ -153,14 +174,12 @@ self.addEventListener("message", async function (e) {
     posEEToBall1Magnitude = posEEToBall1.mag();
 
     penBall1 = posEEToBall1Magnitude - (rBall1 + rEE);
-    /* end ball1 and end-effector contact forces */
 
     /* ball2 and end-effector contact forces */
     posEEToBall2 = (posBall2.clone()).subtract(posEE);
     posEEToBall2Magnitude = posEEToBall2.mag();
 
     penBall2 = posEEToBall2Magnitude - (rBall2 + rEE);
-    /* end ball2 and end-effector contact forces */
 
     /* ball1 forces */
     if (penBall1 < 0) {
@@ -176,7 +195,6 @@ self.addEventListener("message", async function (e) {
     else {
       fContact1.set(0, 0);
     }
-    /* end ball1 forces */
 
     /* ball2 forces */
     if (penBall2 < 0) {
@@ -193,13 +211,11 @@ self.addEventListener("message", async function (e) {
     else {
       fContact2.set(0, 0);
     }
-    /* end ball2 forces*/
 
 
     /* forces due to damping */
     fDamping1 = (velBall1.clone()).multiply(-bAir);
     fDamping2 = (velBall2.clone()).multiply(-bAir);
-    /* end forces due to damping*/
 
     /* forces due to walls on ball1 */
     fWall1.set(0, 0);
@@ -223,7 +239,6 @@ self.addEventListener("message", async function (e) {
     if (penWall1.y < 0) {
       fWall1 = fWall1.add((penWall1.multiply(-kWall))).add((velBall1.clone()).multiply(-bWall));
     }
-    /* end forces due to walls on ball1*/
 
     /* forces due to walls on ball2 */
     fWall2.set(0, 0);
@@ -247,27 +262,25 @@ self.addEventListener("message", async function (e) {
     if (penWall2.y < 0) {
       fWall2 = fWall2.add((penWall2.multiply(-kWall))).add((velBall2.clone()).multiply(-bWall));
     }
-    /* end forces due to walls on ball2*/
 
     /* sum of forces */
     fBall1 = (fContact1.clone()).add(fGravity1).add(fDamping1).add(fWall1);
     fBall2 = (fContact2.clone()).add(fGravity2).add(fDamping2).add(fWall2);
     fEE = (fContact1.clone()).multiply(-1).add((fContact2.clone()).multiply(-1));
-    /* end sum of forces */
-
+    
     /* dynamic state of ball1 calculation (integrate acceleration of ball1) */
     posBall1 = (((fBall1.clone()).divide(2 * mBall1)).multiply(dt * dt)).add((velBall1.clone()).multiply(dt)).add(posBall1);
     velBall1 = (((fBall1.clone()).divide(mBall1)).multiply(dt)).add(velBall1);
-    /*end dynamic state of ball1 calculation */
-
+    
     /* dynamic state of ball2 calculation (integrate acceleration of ball2) */
     posBall2 = (((fBall2.clone()).divide(2 * mBall2)).multiply(dt * dt)).add((velBall2.clone()).multiply(dt)).add(posBall2);
     velBall2 = (((fBall2.clone()).divide(mBall2)).multiply(dt)).add(velBall2);
-    /*end dynamic state of ball2 calculation */
-
+    
     var data = [angles[0], angles[1], positions[0], positions[1], posBall1, posBall2, newPantograph]
+    /* post message to main script with position data */
     this.self.postMessage(data);
 
+    /* send forces to device */
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 

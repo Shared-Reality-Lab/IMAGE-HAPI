@@ -10,6 +10,7 @@ var radsPerDegree = 0.01745;
 var l = 0.07; // m
 var L = 0.09; // m
 
+/* version of device, modified by worker */
 var newPantograph = 0;
 
 /* end effector radius in meters */
@@ -61,14 +62,18 @@ function draw() {
 
 
 async function workerSetup() {
+  /* ask user to select the port where the device is connected */
   let port = await navigator.serial.requestPort();
+  /* post generic message to the worker for the device to start functioning */
   worker.postMessage("test");
 }
 
 if (window.Worker) {
   // console.log("here");
   worker = new Worker("hello_sections_worker.js", {type: "module"});
+  /* connect function to click event in button */
   document.getElementById("button").addEventListener("click", workerSetup);
+  /* listen to messages from the worker */
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
     angles.x = msg.data[0];
@@ -88,40 +93,42 @@ else {
 function create_pantagraph() {
   var rEEAni = pixelsPerMeter * rEE;
 
+  /* draw first joint */
   joint1 = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
   joint1.beginShape();
   joint1.endShape();
 
   if(newPantograph == 1){
+    /* draw second joint - only in 2DIYv3 */
     joint2 = ellipse(deviceOrigin.x - 38e-3 * pixelsPerMeter, deviceOrigin.y, rEEAni, rEEAni)
     joint2.beginShape();
     joint2.endShape();
   }
 
-  // endEffector = beginShape(ELLIPSE, deviceOrigin.x, deviceOrigin.y, 2*rEEAni, 2*rEEAni);
+  /* draw end effector */
   endEffector = ellipse(deviceOrigin.x, deviceOrigin.y, 2 * rEEAni, 2 * rEEAni)
 
 }
 
 
 function create_wall(x1, y1, x2, y2) {
+  /* draw lines with coordinates in the device frame */
   x1 = pixelsPerMeter * x1;
   y1 = pixelsPerMeter * y1;
   x2 = pixelsPerMeter * x2;
   y2 = pixelsPerMeter * y2;
 
-  // return beginShape(LINE, deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y+y2);
   return line(deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y + y2);
 }
 
 
 function update_animation(th1, th2, xE, yE) {
 
-  /* create left-side wall */
+  /* draw vertical division */
   verWall = create_wall(posWallVer.x, posWallVer.y - 0.05, posWallVer.x, posWallVer.y);
   verWall.stroke(color(0));
 
-  /* create bottom wall */
+  /* draw horizontal division */
   horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
   horWall.stroke(color(0));
 
@@ -141,13 +148,16 @@ function update_animation(th1, th2, xE, yE) {
 
   var rEEAni = pixelsPerMeter * rEE;
 
+  /* draw first joint */
   joint1 = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
   joint1.stroke(color(0));
 
   if(newPantograph == 1){
+    /* draw second joint - only in 2DIYv3 */
     joint2 = ellipse(deviceOrigin.x - 38e-3 * pixelsPerMeter, deviceOrigin.y, rEEAni, rEEAni)
     joint2.stroke(color(0));
 
+    /* draw arms */
     var v0x = deviceOrigin.x - 38e-3 * pixelsPerMeter;
     var v0y = deviceOrigin.y;
     var v1x = deviceOrigin.x;
@@ -171,6 +181,7 @@ function update_animation(th1, th2, xE, yE) {
     this.pGraph.endShape(CLOSE);
 
   }else{
+    /* draw arms */
     var v0x = deviceOrigin.x;
     var v0y = deviceOrigin.y;
     var v1x = deviceOrigin.x + lAni * cos(th1);
@@ -191,6 +202,7 @@ function update_animation(th1, th2, xE, yE) {
     this.pGraph.endShape(CLOSE);
   }
 
+  /* draw end effector according to the received position */
   translate(xE, yE);
   endEffector = ellipse(deviceOrigin.x, deviceOrigin.y, 2 * rEEAni, 2 * rEEAni)
   endEffector.beginShape();

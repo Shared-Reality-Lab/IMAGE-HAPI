@@ -24,6 +24,8 @@ var getMessage = async function (m) {
 }
 
 var runLoop = true
+
+/* Device specifications */
 var widgetOne;
 var pantograph;
 
@@ -37,33 +39,47 @@ var posEE = new Vector(0, 0);
 var posEELast = new Vector(0, 0);
 var velEE = new Vector(0, 0);
 var dt = 1 / 1000.0;
+var bAir = 2.5;  // air damping coefficient (kg/s)
 
-var rEE = 0.006;
+var rEE = 0.006; // end effector radius
+
+/* Forces */
 var fEE = new Vector(0, 0);
+var fDamping = new Vector(0, 0);
 
-/* virtual wall parameters */
-var fWall = new Vector(0, 0);
-var kWall = 1500; // N/m
-var bWall = 20; // kg/s
+/* virtual division parameters */
+var fWall = new Vector(0, 0); // force by the division
+var kWall = 1500; // spring constant (N/m)
+var bWall = 20; // damping coefficient (kg/s)
+// distance between the surfaces of the division and ball when they are touching (m)
 var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 
+/* division positions */
 var posWallVer = new Vector(0.0, 0.1);
 var posWallHor = new Vector(0.07, 0.05);
 
+/* Device version */
+//var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Device variables */
 var haplyBoard;
-var newPantograph = 1;
 
 self.addEventListener("message", async function (e) {
+  /* listen to messages from the main script */
 
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
+  
+  /* initialize device */
   haplyBoard = new Board();
   await haplyBoard.init();
   console.log(haplyBoard);
 
   widgetOne = new Device(widgetOneID, haplyBoard);
 
+  /* configure and declare device specifications according to the version */
   if(newPantograph == 1){
     pantograph = new Panto2DIYv3();
     widgetOne.set_mechanism(pantograph);
@@ -96,6 +112,7 @@ self.addEventListener("message", async function (e) {
       run_once = true;
     }
 
+    /* read and save device status */
     widgetOne.device_read_data();
     angles = widgetOne.get_device_angles();
     positions = widgetOne.get_device_position(angles);
@@ -103,37 +120,38 @@ self.addEventListener("message", async function (e) {
 
     velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
 
+    /* update "previous" variable */
     posEELast = posEE;
 
     /* haptic physics force calculation */
 
-    /* forces due to walls on EE */
-    fWall.set(0, 0);
+    /* forces due to damping */
+    fDamping = (velEE.clone()).multiply(-bAir);
 
-    /* vertical wall */
+    /* forces due to divisions on EE */
+    fWall.set(0, 0);
+    /* vertical division */
     penWall.set(posWallVer.x - posEE.x, 0);
     penWallMagnitude = penWall.mag();
     if (penWallMagnitude < (rEE - 0.004) && posEE.y > posWallHor.y) {
       fWall = fWall.add((penWall.multiply(-kWall))).add((velEE.clone()).multiply(-bWall));
     }
-
-    /* horizontal wall */
+    /* horizontal division */
     penWall.set(0, posWallHor.y - posEE.y);
     penWallMagnitude = penWall.mag();
     if (penWallMagnitude < (rEE - 0.004)) {
       fWall = fWall.add((penWall.multiply(-kWall))).add((velEE.clone()).multiply(-bWall));
     }
 
-    /* end forces due to walls on EE*/
-
 
     /* sum of forces */
-    fEE = (fWall.clone()).multiply(-1);
-    /* end sum of forces */
+    fEE = ((fWall.clone()).add(fDamping)).multiply(-1);
 
     var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
+    /* post message to main script with position data */
     this.self.postMessage(data);
 
+    /* send forces to device */
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 

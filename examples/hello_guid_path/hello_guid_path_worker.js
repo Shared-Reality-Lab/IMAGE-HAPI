@@ -24,6 +24,8 @@ var getMessage = async function (m) {
 }
 
 var runLoop = true
+
+/* Device specifications */
 var widgetOne;
 var pantograph;
 
@@ -41,28 +43,27 @@ var posEE = new Vector(0, 0);
 var fCalc = new Vector(0, 0);
 var fEE = new Vector(0, 0);
 
-var oldTime = 0;
-
 /* PID stuff */
 // for kp
 var error = new Vector(0, 0);
 // for ki
 var cumError = new Vector(0, 0);
 var errorPosEE = new Vector(0, 0);
+var oldTime = 0;
 // for kd
 var oldError = new Vector(0, 0);
-//for exponential filter on differentiation
 var diff = new Vector(0, 0);
+//for exponential filter on differentiation
 var buff = new Vector(0, 0);
 
-// changing values
+/* Changing values */
 var kp = 0.06; // kp += 0.01;
 var ki = 3.1; // ki += 0.00001;
 var kd = 4.5; // kd += 0.1;
 var smoothing = 0.80; // smoothing += 0.01;
 var looptime = 2; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
-/* star function parameters */
+/* Path function parameters */
 const starArray = [
   [0.0, 0.03], [0.01, 0.05], [0.03, 0.06], [0.01, 0.07], [0.0, 0.09],
   [-0.01, 0.07], [-0.03, 0.06], [-0.01, 0.05], [0.0, 0.03]
@@ -71,11 +72,17 @@ const starFunc = starArray.map(([x,y]) => (new Vector(x, y + 0.02)))
 const starFus = upsample(starFunc, 3500);
 var idx;
 
+/* Device version */
+//var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Device variables */
 var haplyBoard;
-var newPantograph = 1;
 var stop = false;
 
+
 function upsample(pointArray, k = 2000) {
+  /* To interpolate between the points in an array */
   let upsampledSeg = [];
 
   // for each point (except the last one)...
@@ -140,6 +147,7 @@ function upsample(pointArray, k = 2000) {
 }
 
 function constrain(n, min, max){
+  /* to constrain a number within a range */
   if (n < max && n > min){
     return n;
   }
@@ -150,6 +158,8 @@ function constrain(n, min, max){
 }
 
 self.addEventListener("message", async function (e) {
+  /* listen to messages from the main script */
+  /* take action depending on the message content */
   if(e.data == "stop"){
     stop = true;
   }else if(e.data == "start"){
@@ -157,12 +167,15 @@ self.addEventListener("message", async function (e) {
   }else{
     /************ BEGIN SETUP CODE *****************/
     console.log('in worker');
+    
+    /* initialize device */
     haplyBoard = new Board();
     await haplyBoard.init();
     console.log(haplyBoard);
 
     widgetOne = new Device(widgetOneID, haplyBoard);
 
+    /* configure and declare device specifications according to the version */
     if(newPantograph == 1){
       pantograph = new Panto2DIYv3();
       widgetOne.set_mechanism(pantograph);
@@ -197,6 +210,7 @@ self.addEventListener("message", async function (e) {
         run_once = true;
       }
 
+      /* read and save device status */
       widgetOne.device_read_data();
       angles = widgetOne.get_device_angles();
       positions = widgetOne.get_device_position(angles);
@@ -207,30 +221,42 @@ self.addEventListener("message", async function (e) {
       /* forces due to guidance on EE */
       fCalc.set(0, 0);
       
+      /* compute time difference from previous loop */
       var timedif = performance.now() - oldTime;
       if(timedif > (looptime * 1.05)){
+        /* notify if there is more than 5% looptime error */
         console.log("caution, haptic loop took " + timedif.toFixed(2) + " ms");
       }
 
+      /* compute error (random target position - EE position), and scale to pixels */
       error = (starFus[idx].subtract(posEE)).multiply(pixelsPerMeter);
+      /* compute error (EE previous pos - EE current pos) */
       errorPosEE = posEE.subtract(prevPosEE);
+      /* compute accumulated error - integral*/
       cumError = errorPosEE.add(errorPosEE.multiply(timedif * 0.001));
 
       //buff = (error.subtract(oldError)).divide(timedif);           
       //diff = (diff.multiply(smoothing)).add(buff.multiply(1.0 - smoothing));
+      
+      /* compute differential error - derivative */
       diff = errorPosEE.divide(timedif * 0.001);
       //oldError = error;
+      
+      /* update "previous" variables */
       oldTime = performance.now();
       prevPosEE = posEE;
       
+      /* PID controller equation */
       fCalc.x = constrain(kp * error.x + ki * cumError.x + kd * diff.x, -4, 4) * -1;
       fCalc.y = constrain(kp * error.y + ki * cumError.y + kd * diff.y, -4, 4);
 
       /* end forces due to guidance on EE */
 
       if(stop){
+        /* send zero force to the device */
         fCalc.set(0, 0);
       }else{
+        /* change the target to the next point in the point array of the path */
         idx++;
         if(idx >= (starFus.length)){
           idx = 0;
@@ -238,13 +264,14 @@ self.addEventListener("message", async function (e) {
       }
 
       /* sum of forces */
-      //fCalc.set(0, 0);
       fEE = fCalc.clone();
       /* end sum of forces */
 
       var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
+      /* post message to main script with position data */
       this.self.postMessage(data);
 
+      /* send forces to device */
       widgetOne.set_device_torques(fEE.toArray());
       widgetOne.device_write_torques();
 
