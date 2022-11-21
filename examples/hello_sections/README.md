@@ -6,7 +6,7 @@ This folder contains the exploratory example named `hello_sections`.
 
 There are two lines that go through the work area, which set up a total of three sections.
 
-The user can feel a _bump_ as the result of the force applied when the end effector crosses the lines, indicating the user has reach another section in the workspace.
+The user can feel a _bump_ as the result of the force applied when the end effector crosses the lines, indicating the user has reached another section in the workspace.
 
 ## Contents
 
