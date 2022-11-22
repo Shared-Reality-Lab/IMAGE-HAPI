@@ -11,14 +11,14 @@ var l = 0.07; // m
 var L = 0.09; // m
 
 /* version of device, modified by worker */
-var newPantograph = 0;
+var newPantograph;
 
 /* end effector radius in meters */
 var rEE = 0.006;
 
 /* virtual wall parameters */
-var posWallVer = new p5.Vector(0.0, 0.1);
-var posWallHor = new p5.Vector(0.07, 0.05);
+var posWallVer = new p5.Vector(0.0, 0.12);
+var posWallHor = new p5.Vector(0.07, 0.07);
 
 /* generic data for a 2DOF device */
 /* joint space */

@@ -56,8 +56,8 @@ var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 
 /* division positions */
-var posWallVer = new Vector(0.0, 0.1);
-var posWallHor = new Vector(0.07, 0.05);
+var posWallVer = new Vector(0.0, 0.12);
+var posWallHor = new Vector(0.07, 0.07);
 
 /* Device version */
 //var newPantograph = 0; // uncomment for 2DIYv1

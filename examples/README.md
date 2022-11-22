@@ -9,7 +9,7 @@ This folder contains six examples using the JS version of the hAPI (Haply's API)
 3. Open the console to check for any logs about the behavior of the Haply 2DIY.
 4. Connect the Haply 2DIY to the computer.
 5. Press the `Press me` button, a window will pop up.
-6. Select the correct COM port for the Haply 2DIY (DO NOT connect just yet -).
+6. Select the correct serial port for the Haply 2DIY (DO NOT connect just yet - ).
 7. While holding firmly the Haply 2DIY in its home position, press the `Connect` button in the pop up.
     * Home positions
         * Haply 2DIYv1: fully contracted arms.

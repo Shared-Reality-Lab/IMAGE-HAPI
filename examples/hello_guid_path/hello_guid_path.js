@@ -11,7 +11,7 @@ var l = 0.07; // m
 var L = 0.09; // m
 
 /* version of device, modified by worker */
-var newPantograph = 0;
+var newPantograph;
 
 /* end effector radius in meters */
 var rEE = 0.006;
