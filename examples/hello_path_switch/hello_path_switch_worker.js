@@ -42,6 +42,9 @@ var prevPosEE = new Vector(0, 0);
 var posEE = new Vector(0, 0);
 var fCalc = new Vector(0, 0);
 var fEE = new Vector(0, 0);
+var startTime = 0;
+var codeTime = 0;
+var promTime = 0;
 
 /* PID stuff */
 // for kp
@@ -221,6 +224,7 @@ self.addEventListener("message", async function (e) {
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
     while (true) {
+      startTime = this.performance.now();
 
       if (!run_once) {
         widgetOne.device_set_parameters();
@@ -239,7 +243,7 @@ self.addEventListener("message", async function (e) {
       fCalc.set(0, 0);
       
       /* compute time difference from previous loop */
-      var timedif = performance.now() - oldTime;
+      var timedif = this.performance.now() - oldTime;
       if(timedif > (looptime * 1.05)){
         /* notify if there is more than 5% looptime error */
         console.log("caution, haptic loop took " + timedif.toFixed(2) + " ms");
@@ -260,7 +264,7 @@ self.addEventListener("message", async function (e) {
       //oldError = error;
       
       /* update "previous" variables */
-      oldTime = performance.now();
+      oldTime = this.performance.now();
       prevPosEE = posEE;
       
       /* PID controller equation */
@@ -299,9 +303,12 @@ self.addEventListener("message", async function (e) {
       widgetOne.set_device_torques(fEE.toArray());
       widgetOne.device_write_torques();
 
-      
-      // run every ${looptime} ms
-      await new Promise(r => setTimeout(r, looptime));
+      codeTime = this.performance.now();
+      promTime = looptime - (codeTime - startTime);
+      if(promTime > 0){
+        // run every ${looptime} ms
+        await new Promise(r => setTimeout(r, promTime));        
+      }
     }
   }
 
