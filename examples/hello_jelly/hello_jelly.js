@@ -68,11 +68,24 @@ async function workerSetup() {
   worker.postMessage("test");
 }
 
+async function toggleWorker() {
+  /* post specific messages to trigger different options in the event listener of the worker */
+  /* to toggle the application of any force from the device to the user */
+  if(document.getElementById("button2").textContent == "Stop force"){
+    worker.postMessage("stop");
+    document.getElementById("button2").textContent = "Apply force"
+  }else{
+    worker.postMessage("start");
+    document.getElementById("button2").textContent = "Stop force"
+  }
+}
+
 if (window.Worker) {
   // console.log("here");
   worker = new Worker("hello_jelly_worker.js", {type: "module"});
   /* connect function to click event in button */
   document.getElementById("button").addEventListener("click", workerSetup);
+  document.getElementById("button2").addEventListener("click", toggleWorker);
   /* listen to messages from the worker */
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()

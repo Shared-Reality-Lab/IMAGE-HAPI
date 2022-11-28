@@ -79,6 +79,7 @@ var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
 /* Device variables */
 var haplyBoard;
+var stop = false;
 
 function constrain(n, min, max){
   /* to constrain a number within a range */
@@ -93,116 +94,127 @@ function constrain(n, min, max){
 
 self.addEventListener("message", async function (e) {
   /* listen to messages from the main script */
-
-  /************ BEGIN SETUP CODE *****************/
-  console.log('in worker');
-  
-  /* initialize device */
-  haplyBoard = new Board();
-  await haplyBoard.init();
-  console.log(haplyBoard);
-
-  widgetOne = new Device(widgetOneID, haplyBoard);
-
-  /* configure and declare device specifications according to the version */
-  if(newPantograph == 1){
-    pantograph = new Panto2DIYv3();
-    widgetOne.set_mechanism(pantograph);
-  
-    widgetOne.add_actuator(1, 1, 2); //CCW
-    widgetOne.add_actuator(2, 1, 1); //CCW
-  
-    widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
-    widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
+  /* take action depending on the message content */
+  if(e.data == "stop"){
+    stop = true;
+  }else if(e.data == "start"){
+    stop = false;
   }else{
-    pantograph = new Panto2DIYv1();
-    widgetOne.set_mechanism(pantograph);
-  
-    widgetOne.add_actuator(1, 1, 2); //CCW
-    widgetOne.add_actuator(2, 0, 1); //CW
-  
-    widgetOne.add_encoder(1, 1, 241, 10752, 2);
-    widgetOne.add_encoder(2, 0, -61, 10752, 1);
-  }
+    /************ BEGIN SETUP CODE *****************/
+    console.log('in worker');
+    
+    /* initialize device */
+    haplyBoard = new Board();
+    await haplyBoard.init();
+    console.log(haplyBoard);
 
-  var run_once = false;
+    widgetOne = new Device(widgetOneID, haplyBoard);
 
-  /************************ END SETUP CODE ************************* */
-
-  /**********  BEGIN CONTROL LOOP CODE *********************/
-  while (true) {
-    startTime = this.performance.now();
-
-    if (!run_once) {
-      widgetOne.device_set_parameters();
-      run_once = true;
-    }
-
-    /* read and save device status */
-    widgetOne.device_read_data();
-    angles = widgetOne.get_device_angles();
-    positions = widgetOne.get_device_position(angles);
-    posEE.set(positions);
-    posEE.x = -posEE.x; // device_to_graphics function
-
-    velEE.set(((posEE.clone()).subtract(posEELast)).divide(dt));
-
-    /* haptic physics force calculation */        
-    /* update "previous" variable */
-    posEELast = posEE.clone();
-
-    /* forces due to damping in air */
-    fDamping = (velEE.clone()).multiply(-bAir);
-
-    /* forces due to damping in divisions */
-    if (posEE.y < posWallHor.y) {
-      if(posEE.x < posWallVer.x){
-        /* top left quadrant */
-        fDiv = (velEE.clone()).multiply(-bTopLeft);
-      }else{
-        /* top right quadrant */
-        fDiv = (velEE.clone()).multiply(-bTopRight);
-      }
+    /* configure and declare device specifications according to the version */
+    if(newPantograph == 1){
+      pantograph = new Panto2DIYv3();
+      widgetOne.set_mechanism(pantograph);
+    
+      widgetOne.add_actuator(1, 1, 2); //CCW
+      widgetOne.add_actuator(2, 1, 1); //CCW
+    
+      widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
+      widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
     }else{
-      if(posEE.x < posWallVer.x){
-        /* bottom left quadrant */
-        fDiv = (velEE.clone()).multiply(-bBotLeft);
-      }else{
-        /* bottom right quadrant */
-        fDiv = (velEE.clone()).multiply(-bBotRight);
-      }
+      pantograph = new Panto2DIYv1();
+      widgetOne.set_mechanism(pantograph);
+    
+      widgetOne.add_actuator(1, 1, 2); //CCW
+      widgetOne.add_actuator(2, 0, 1); //CW
+    
+      widgetOne.add_encoder(1, 1, 241, 10752, 2);
+      widgetOne.add_encoder(2, 0, -61, 10752, 1);
     }
 
-    fEnv.x = fDamping.x + fDiv.x;
-    fEnv.y = fDamping.y + fDiv.y;
+    var run_once = false;
 
-    fCalc.x = constrain(0.4*fEnv.x + 0.3*fEnvLast.x + 0.2*fEnvLastLast.x + 0.1*fEnvLastLastLast.x, -6, 6) * -1;
-    fCalc.y = constrain(0.4*fEnv.y + 0.3*fEnvLast.y + 0.2*fEnvLastLast.y + 0.1*fEnvLastLastLast.y, -6, 6);
+    /************************ END SETUP CODE ************************* */
 
-    // fCalc.x = constrain(0.1*fEnv.x + 0.2*fEnvLast.x + 0.3*fEnvLastLast.x + 0.4*fEnvLastLastLast.x, -6, 6) * -1;
-    // fCalc.y = constrain(0.1*fEnv.y + 0.2*fEnvLast.y + 0.3*fEnvLastLast.y + 0.4*fEnvLastLastLast.y, -6, 6);
+    /**********  BEGIN CONTROL LOOP CODE *********************/
+    while (true) {
+      startTime = this.performance.now();
 
-    /* updating "previous" variables */
-    fEnvLastLastLast = fEnvLastLast.clone();
-    fEnvLastLast = fEnvLast.clone();
-    fEnvLast = fEnv.clone();
+      if (!run_once) {
+        widgetOne.device_set_parameters();
+        run_once = true;
+      }
 
-    /* sum of forces */
-    fEE = fCalc.clone();
+      /* read and save device status */
+      widgetOne.device_read_data();
+      angles = widgetOne.get_device_angles();
+      positions = widgetOne.get_device_position(angles);
+      posEE.set(positions);
+      posEE.x = -posEE.x; // device_to_graphics function
 
-    var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
-    /* post message to main script with position data */
-    this.self.postMessage(data);
+      velEE.set(((posEE.clone()).subtract(posEELast)).divide(dt));
 
-    /* send forces to device */
-    widgetOne.set_device_torques(fEE.toArray());
-    widgetOne.device_write_torques();
+      /* haptic physics force calculation */        
+      /* update "previous" variable */
+      posEELast = posEE.clone();
 
-    codeTime = this.performance.now();
-    promTime = looptime - (codeTime - startTime);
-    if(promTime > 0){
-      // run every ${looptime} ms
-      await new Promise(r => setTimeout(r, promTime));        
+      /* forces due to damping in air */
+      fDamping = (velEE.clone()).multiply(-bAir);
+
+      /* forces due to damping in divisions */
+      if (posEE.y < posWallHor.y) {
+        if(posEE.x < posWallVer.x){
+          /* top left quadrant */
+          fDiv = (velEE.clone()).multiply(-bTopLeft);
+        }else{
+          /* top right quadrant */
+          fDiv = (velEE.clone()).multiply(-bTopRight);
+        }
+      }else{
+        if(posEE.x < posWallVer.x){
+          /* bottom left quadrant */
+          fDiv = (velEE.clone()).multiply(-bBotLeft);
+        }else{
+          /* bottom right quadrant */
+          fDiv = (velEE.clone()).multiply(-bBotRight);
+        }
+      }
+
+      fEnv.x = fDamping.x + fDiv.x;
+      fEnv.y = fDamping.y + fDiv.y;
+
+      fCalc.x = constrain(0.4*fEnv.x + 0.3*fEnvLast.x + 0.2*fEnvLastLast.x + 0.1*fEnvLastLastLast.x, -6, 6) * -1;
+      fCalc.y = constrain(0.4*fEnv.y + 0.3*fEnvLast.y + 0.2*fEnvLastLast.y + 0.1*fEnvLastLastLast.y, -6, 6);
+
+      // fCalc.x = constrain(0.1*fEnv.x + 0.2*fEnvLast.x + 0.3*fEnvLastLast.x + 0.4*fEnvLastLastLast.x, -6, 6) * -1;
+      // fCalc.y = constrain(0.1*fEnv.y + 0.2*fEnvLast.y + 0.3*fEnvLastLast.y + 0.4*fEnvLastLastLast.y, -6, 6);
+
+      if(stop){
+        /* send zero force to the device */
+        fCalc.set(0, 0);
+      }
+
+      /* updating "previous" variables */
+      fEnvLastLastLast = fEnvLastLast.clone();
+      fEnvLastLast = fEnvLast.clone();
+      fEnvLast = fEnv.clone();
+
+      /* sum of forces */
+      fEE = fCalc.clone();
+
+      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
+      /* post message to main script with position data */
+      this.self.postMessage(data);
+
+      /* send forces to device */
+      widgetOne.set_device_torques(fEE.toArray());
+      widgetOne.device_write_torques();
+
+      codeTime = this.performance.now();
+      promTime = looptime - (codeTime - startTime);
+      if(promTime > 0){
+        // run every ${looptime} ms
+        await new Promise(r => setTimeout(r, promTime));        
+      }
     }
   }
 
