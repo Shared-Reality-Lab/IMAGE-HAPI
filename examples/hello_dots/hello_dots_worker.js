@@ -65,6 +65,7 @@ var distBtwnRows = 0.005;
 var distBtwnCols = 0.005;
 var start = new Vector(-14 * distBtwnCols, 9 * distBtwnRows); // preferably not above (-0.07, 0.045)
 var end = new Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not below (0.07, 0.13)
+var edgeMargin = 0.1;
 
 /* Device version */
 var newPantograph = 0; // uncomment for 2DIYv1
@@ -150,8 +151,8 @@ self.addEventListener("message", async function (e) {
     posEEToDotMagnitude = posEEToDot.mag();
     penDot = posEEToDotMagnitude - (rDot + rEE);
     
-    if(posEE.y > start.y && posEE.y < end.y &&
-       posEE.x > start.x && posEE.x < end.x && penDot < 0){
+    if(posEE.y > (start.y)*(1+edgeMargin) && posEE.y < (end.y)*(1+edgeMargin) &&
+       posEE.x > (start.x)*(1+edgeMargin) && posEE.x < (end.x)*(1+edgeMargin) && penDot < 0){
 
       fDot = posEEToDot.normalize();
 

@@ -135,8 +135,8 @@ function create_dot(x, y, rCircle) {
 function update_animation(th1, th2, xE, yE) {
 
   /* draw rows of dots */
-  for(var i=start.x; i<end.x; i+=distBtwnCols){
-    for(var j=start.y; j<end.y; j+=distBtwnRows){
+  for(var i=start.x; i<=end.x; i+=distBtwnCols){
+    for(var j=start.y; j<=end.y; j+=distBtwnRows){
       dot = create_dot(i, j, rDot);
       dot.stroke(color(0));
     }
