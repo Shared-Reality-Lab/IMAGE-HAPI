@@ -56,7 +56,8 @@ var fDamping = new Vector(0, 0);
 var fDot = new Vector(0, 0); // force by the dots
 var kDot = 2500; // spring constant (N/m)
 var bDot = 5; // damping coefficient (kg/s)
-// distance between the surfaces of the dot and EE when they are touching (m)
+// distance between the surfaces of the dot and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penDot = new Vector(0, 0);
 
 /* dot positions */
@@ -151,6 +152,7 @@ self.addEventListener("message", async function (e) {
     posEEToDotMagnitude = posEEToDot.mag();
     penDot = posEEToDotMagnitude - (rDot + rEE);
     
+    // if the EE is on the area with dots and is overlapping with one (there's a margin in case a dot is on the edge)
     if(posEE.y > (start.y)*(1+edgeMargin) && posEE.y < (end.y)*(1+edgeMargin) &&
        posEE.x > (start.x)*(1+edgeMargin) && posEE.x < (end.x)*(1+edgeMargin) && penDot < 0){
 

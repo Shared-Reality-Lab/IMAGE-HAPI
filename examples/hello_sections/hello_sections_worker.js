@@ -51,7 +51,8 @@ var fDamping = new Vector(0, 0);
 var fWall = new Vector(0, 0); // force by the division
 var kWall = 1500; // spring constant (N/m)
 var bWall = 20; // damping coefficient (kg/s)
-// distance between the surfaces of the division and ball when they are touching (m)
+// distance between the surfaces of the division and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 

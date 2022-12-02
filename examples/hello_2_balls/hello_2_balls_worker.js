@@ -63,14 +63,16 @@ var rBall2 = 0.01; // ball 2
 var mBall1 = 0.05;  // mass (kg)
 var kBall1 = 445;  // spring constant (N/m)
 var bBall1 = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE when they are touching (m)
+// distance between the surfaces of the ball and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penBall1 = 0.0;  // m
 
 /* virtual ball 2 parameters */
 var mBall2 = 0.1;  // mass (kg)
 var kBall2 = 445;  // spring constant (N/m)
 var bBall2 = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE when they are touching (m)
+// distance between the surfaces of the ball and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penBall2 = 0.0;  // m
 
 var bAir = 0.0;  // air damping coefficient (kg/s)
@@ -93,7 +95,8 @@ var fWall1 = new Vector(0, 0);  // force by the wall in ball 1
 var fWall2 = new Vector(0, 0);  // force by the wall in ball 2
 var kWall = 800; // spring constant (N/m)
 var bWall = 2; // damping coefficient (kg/s)
-// distances between the surfaces of the wall and ball when they are touching (m)
+// distances between the surfaces of the wall and ball, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall1 = new Vector(0, 0);
 var penWall2 = new Vector(0, 0);
 

@@ -49,9 +49,10 @@ var fDamping = new Vector(0, 0);
 
 /* virtual division parameters */
 var fWall = new Vector(0, 0); // force by the division
-var kWall = 1500; // spring constant (N/m)
-var bWall = 2; // damping coefficient (kg/s)
-// distance between the surfaces of the division and ball when they are touching (m)
+var kWall = 3500; // spring constant (N/m)
+var bWall = 5; // damping coefficient (kg/s)
+// distance between the surfaces of the division and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 
@@ -140,11 +141,12 @@ self.addEventListener("message", async function (e) {
 
     /* forces due to divisions on EE */
     fWall.set(0, 0);
-    /* horizontal division */
 
+    // if the EE is on the area with stripes
     if(posEE.y > start.y && posEE.y < end.y && posEE.x > start.x && posEE.x < end.x){
       penWall.set(0, posEE.y % distBtwnWalls);
       penWallMagnitude = penWall.mag();
+      // if the EE is overlapping with the stripes
       if (penWallMagnitude < (rEE - 0.004)) {
         fWall = fWall.add((penWall.multiply(-kWall))).add((velEE.clone()).multiply(-bWall));
       }

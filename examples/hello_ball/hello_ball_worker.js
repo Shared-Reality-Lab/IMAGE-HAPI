@@ -56,7 +56,8 @@ var rBall = 0.02; // ball
 var mBall = 0.15;  // mass (kg)
 var kBall = 445;  // spring constant (N/m)
 var bBall = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE when they are touching (m)
+// distance between the surfaces of the ball and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penBall = 0.0;
 
 var bAir = 0.0;  // air damping coefficient (kg/s)
@@ -73,7 +74,8 @@ var fDamping = new Vector(0, 0);
 var fWall = new Vector(0, 0); // force by the wall
 var kWall = 800; // spring constant (N/m)
 var bWall = 2; // damping coefficient (kg/s)
-// distance between the surfaces of the wall and ball when they are touching (m)
+// distance between the surfaces of the wall and ball, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall = new Vector(0, 0);
 
 /* wall positions */
