@@ -51,7 +51,8 @@ var fDamping = new Vector(0, 0);
 var fWall = new Vector(0, 0); // force by the division
 var kWall = 1500; // spring constant (N/m)
 var bWall = 20; // damping coefficient (kg/s)
-// distance between the surfaces of the division and ball when they are touching (m)
+// distance between the surfaces of the division and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 
@@ -62,6 +63,14 @@ var posWallHor = new Vector(0.07, 0.07);
 /* Device version */
 //var newPantograph = 0; // uncomment for 2DIYv1
 var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Time variables */
+var startTime = 0;
+var codeTime = 0;
+var promTime = 0;
+
+/* Changing values */
+var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
 /* Device variables */
 var haplyBoard;
@@ -106,6 +115,7 @@ self.addEventListener("message", async function (e) {
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
   while (true) {
+    startTime = this.performance.now();
 
     if (!run_once) {
       widgetOne.device_set_parameters();
@@ -155,9 +165,12 @@ self.addEventListener("message", async function (e) {
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 
-    
-    // run every 1 ms
-    await new Promise(r => setTimeout(r, 1));
+    codeTime = this.performance.now();
+    promTime = looptime - (codeTime - startTime);
+    if(promTime > 0){
+      // run every ${looptime} ms
+      await new Promise(r => setTimeout(r, promTime));        
+    }
   }
 
   /**********  END CONTROL LOOP CODE *********************/

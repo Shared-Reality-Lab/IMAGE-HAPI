@@ -38,54 +38,39 @@ var positions = new Vector(0, 0);
 var posEE = new Vector(0, 0);
 var posEELast = new Vector(0, 0);
 var velEE = new Vector(0, 0);
+var posEEToDot = new Vector(0, 0);
+var posEEToDotMagnitude;
+var velEEToDot = new Vector(0, 0);
+var velEEToDotMagnitude;
 
-var posBall = new Vector(0, 0.05);
-var velBall = new Vector(0, 0);
-
-var posEEToBall;
-var posEEToBallMagnitude;
-
-var velEEToBall;
-var velEEToBallMagnitude;
-
-/* Radius */
-var rEE = 0.006; // end effector
-var rBall = 0.02; // ball
-
-/* virtual ball parameters */
-var mBall = 0.15;  // mass (kg)
-var kBall = 445;  // spring constant (N/m)
-var bBall = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE, 
-// which is zero / negative when they are touching / overlapping (m)
-var penBall = 0.0;
-
-var bAir = 0.0;  // air damping coefficient (kg/s)
-var fGravity = new Vector(0, 9.8 * mBall); // gravity force
 var dt = 1 / 1000.0;
+var bAir = 0.0;  // air damping coefficient (kg/s)
+
+var rEE = 0.006; // end effector radius
 
 /* Forces */
 var fEE = new Vector(0, 0);
-var fBall = new Vector(0, 0);
-var fContact = new Vector(0, 0);
 var fDamping = new Vector(0, 0);
 
-/* virtual wall parameters */
-var fWall = new Vector(0, 0); // force by the wall
-var kWall = 800; // spring constant (N/m)
-var bWall = 2; // damping coefficient (kg/s)
-// distance between the surfaces of the wall and ball, 
+/* virtual dot parameters */
+var fDot = new Vector(0, 0); // force by the dots
+var kDot = 2500; // spring constant (N/m)
+var bDot = 5; // damping coefficient (kg/s)
+// distance between the surfaces of the dot and EE, 
 // which is zero / negative when they are touching / overlapping (m)
-var penWall = new Vector(0, 0);
+var penDot = new Vector(0, 0);
 
-/* wall positions */
-var posWallLeft = new Vector(-0.07, 0.03);
-var posWallRight = new Vector(0.07, 0.03);
-var posWallBottom = new Vector(0.0, 0.1);
+/* dot positions */
+var rDot = 0.001;
+var distBtwnRows = 0.005;
+var distBtwnCols = 0.005;
+var start = new Vector(-14 * distBtwnCols, 9 * distBtwnRows); // preferably not above (-0.07, 0.045)
+var end = new Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not below (0.07, 0.13)
+var edgeMargin = 0.1;
 
 /* Device version */
-//var newPantograph = 0; // uncomment for 2DIYv1
-var newPantograph = 1; // uncomment for 2DIYv3
+var newPantograph = 0; // uncomment for 2DIYv1
+// var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */
 var startTime = 0;
@@ -100,7 +85,7 @@ var haplyBoard;
 
 self.addEventListener("message", async function (e) {
   /* listen to messages from the main script */
-  
+
   /************ BEGIN SETUP CODE *****************/
   console.log('in worker');
   
@@ -110,7 +95,7 @@ self.addEventListener("message", async function (e) {
   console.log(haplyBoard);
 
   widgetOne = new Device(widgetOneID, haplyBoard);
-  
+
   /* configure and declare device specifications according to the version */
   if(newPantograph == 1){
     pantograph = new Panto2DIYv3();
@@ -133,7 +118,7 @@ self.addEventListener("message", async function (e) {
   }
 
   var run_once = false;
-  
+
   /************************ END SETUP CODE ************************* */
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
@@ -154,63 +139,42 @@ self.addEventListener("message", async function (e) {
     velEE.set((posEE.clone()).subtract(posEELast).divide(dt));
 
     /* update "previous" variable */
-    posEELast = posEE;
+    posEELast = posEE.clone();
 
     /* haptic physics force calculation */
 
-    /* ball and end-effector contact forces */
-    posEEToBall = (posBall.clone()).subtract(posEE);
-    posEEToBallMagnitude = posEEToBall.mag();
+    /* forces due to damping */
+    fDamping = (velEE.clone()).multiply(-bAir);
 
-    penBall = posEEToBallMagnitude - (rBall + rEE);
+    /* forces due to dots on EE */
+    posEEToDot.x = posEE.x % distBtwnCols;
+    posEEToDot.y = posEE.y % distBtwnRows;
+    posEEToDotMagnitude = posEEToDot.mag();
+    penDot = posEEToDotMagnitude - (rDot + rEE);
+    
+    // if the EE is on the area with dots and is overlapping with one (there's a margin in case a dot is on the edge)
+    if(posEE.y > (start.y)*(1+edgeMargin) && posEE.y < (end.y)*(1+edgeMargin) &&
+       posEE.x > (start.x)*(1+edgeMargin) && posEE.x < (end.x)*(1+edgeMargin) && penDot < 0){
 
-    /* ball forces */
-    if (penBall < 0) {
-      fContact = posEEToBall.normalize();
+      fDot = posEEToDot.normalize();
 
-      velEEToBall = velBall.clone().subtract(velEE);
-      velEEToBall = fContact.clone().multiply(velEEToBall.dot(fContact));
-      velEEToBallMagnitude = velEEToBall.mag();
+      velEEToDot = (velEE.clone()).multiply(-1);
+      velEEToDot = (fDot.clone()).multiply(velEEToDot.dot(fDot));
+      velEEToDotMagnitude = velEEToDot.mag();
 
-      /* since penBall is negative kBall must be negative to ensure the force acts along the end-effector to the ball */
-      fContact = fContact.multiply((-kBall * penBall) - (bBall * velEEToBallMagnitude));
+      /* since penDot is negative kDot must be negative to ensure the force acts along the end-effector to the ball */
+      fDot = fDot.multiply((-kDot * penDot) - (bDot * velEEToDotMagnitude));
     }
     else {
-      fContact.set(0, 0);
-    }
-
-
-    /* forces due to damping */
-    fDamping = (velBall.clone()).multiply(-bAir);
-
-    /* forces due to walls on ball */
-    fWall.set(0, 0);
-    /* left wall */
-    penWall.set((posBall.x - rBall) - posWallLeft.x, 0);
-    if (penWall.x < 0) {
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-    }
-    /* bottom wall */
-    penWall.set(0, (posBall.y + rBall) - posWallBottom.y);
-    if (penWall.y > 0) {
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
-    }
-    /* right wall */
-    penWall.set((posBall.x + rBall) - posWallRight.x, 0);
-    if (penWall.x > 0) {
-      fWall = fWall.add((penWall.multiply(-kWall))).add((velBall.clone()).multiply(-bWall));
+      fDot.set(0, 0);
     }
 
 
     /* sum of forces */
-    fBall = (fContact.clone()).add(fGravity).add(fDamping).add(fWall);
-    fEE = (fContact.clone()).multiply(-1);
+    // fEE = (fDot.clone()).multiply(-1);
+    fEE = ((fDot.clone()).multiply(-1)).add(fDamping);
 
-    /* dynamic state of ball calculation (integrate acceleration of ball) */
-    posBall = (((fBall.clone()).divide(2 * mBall)).multiply(dt * dt)).add((velBall.clone()).multiply(dt)).add(posBall);
-    velBall = (((fBall.clone()).divide(mBall)).multiply(dt)).add(velBall);
-
-    var data = [angles[0], angles[1], positions[0], positions[1], posBall, newPantograph]
+    var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
     /* post message to main script with position data */
     this.self.postMessage(data);
 

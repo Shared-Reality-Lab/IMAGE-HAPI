@@ -34,52 +34,52 @@ var angles = new Vector(0, 0);
 var torques = new Vector(0, 0);
 var positions = new Vector(0, 0);
 
-/* Screen and world setup parameters */
-var pixelsPerMeter = 4000.0;
-
 /* task space */
-var prevPosEE = new Vector(0, 0);
 var posEE = new Vector(0, 0);
-var fCalc = new Vector(0, 0);
+var posEELast = new Vector(0, 0);
+var velEE = new Vector(0, 0);
+var dt = 1/1000.0;
+
+var rEE = 0.006; // end effector radius
+
+/* Forces */
 var fEE = new Vector(0, 0);
-var randy = new Vector(0, 0.045);
+var fDamping = new Vector(0, 0);
+
+/* virtual division parameters */
+var fDiv = new Vector(0, 0); // force in the division
+var fEnv = new Vector(0, 0);
+var fEnvLast = new Vector(0, 0);
+var fEnvLastLast = new Vector(0, 0);
+var fEnvLastLastLast = new Vector(0, 0);
+var fCalc = new Vector(0, 0);
+
+/* damping coefficients (kg/s) */
+var bAir = 0;  // air
+var bTopLeft = 1; // top left quadrant
+var bTopRight = 2; // top right quadrant
+var bBotLeft = 3; // bottom left quadrant
+var bBotRight = 4; // bottom right quadrant
+
+/* division positions */
+var posWallVer = new Vector(0.0, 0.12);
+var posWallHor = new Vector(0.07, 0.07);
+
+/* Device version */
+var newPantograph = 0; // uncomment for 2DIYv1
+// var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Time variables */
 var startTime = 0;
 var codeTime = 0;
 var promTime = 0;
 
-/* PID stuff */
-// for kp
-var error = new Vector(0, 0);
-// for ki
-var cumError = new Vector(0, 0);
-var errorPosEE = new Vector(0, 0);
-var oldTime = 0;
-// for kd
-var oldError = new Vector(0, 0);
-var diff = new Vector(0, 0);
-//for exponential filter on differentiation
-var buff = new Vector(0, 0);
-
 /* Changing values */
-var kp = 0.15; // kp += 0.01;
-var ki = 1.2; // ki += 0.00001;
-var kd = 1.5; // kd += 0.1;
-var smoothing = 0.8; // smoothing += 0.01;
 var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
-
-/* Device version */
-//var newPantograph = 0; // uncomment for 2DIYv1
-var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Device variables */
 var haplyBoard;
 var stop = false;
-
-
-function randGen(min, max){
-  /* to generate a random number within a range */
-  return Math.random() * (max - min) + min;
-}
 
 function constrain(n, min, max){
   /* to constrain a number within a range */
@@ -102,11 +102,12 @@ self.addEventListener("message", async function (e) {
   }else{
     /************ BEGIN SETUP CODE *****************/
     console.log('in worker');
-
+    
     /* initialize device */
     haplyBoard = new Board();
     await haplyBoard.init();
     console.log(haplyBoard);
+
     widgetOne = new Device(widgetOneID, haplyBoard);
 
     /* configure and declare device specifications according to the version */
@@ -119,10 +120,6 @@ self.addEventListener("message", async function (e) {
     
       widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
       widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
-
-      /* generate random coordinates according to the work area of the device*/
-      randy.x = randGen(-0.07, 0.05);
-      randy.y = randGen(0.045, 0.1);
     }else{
       pantograph = new Panto2DIYv1();
       widgetOne.set_mechanism(pantograph);
@@ -132,14 +129,10 @@ self.addEventListener("message", async function (e) {
     
       widgetOne.add_encoder(1, 1, 241, 10752, 2);
       widgetOne.add_encoder(2, 0, -61, 10752, 1);
-      
-      /* generate random coordinates according to the work area of the device*/
-      randy.x = randGen(-0.1, 0.1);
-      randy.y = randGen(0.025, 0.1);
     }
 
     var run_once = false;
-    
+
     /************************ END SETUP CODE ************************* */
 
     /**********  BEGIN CONTROL LOOP CODE *********************/
@@ -158,50 +151,57 @@ self.addEventListener("message", async function (e) {
       posEE.set(positions);
       posEE.x = -posEE.x; // device_to_graphics function
 
-      /* haptic physics force calculation */
-      /* forces due to guidance on EE */
-      fCalc.set(0, 0);
-      
-      /* compute time difference from previous loop */
-      var timedif = this.performance.now() - oldTime;
-      if(timedif > (looptime * 1.05)){
-        /* notify if there is more than 5% looptime error */
-        console.log("caution, haptic loop took " + timedif.toFixed(2) + " ms");
+      velEE.set(((posEE.clone()).subtract(posEELast)).divide(dt));
+
+      /* haptic physics force calculation */        
+      /* update "previous" variable */
+      posEELast = posEE.clone();
+
+      /* forces due to damping in air */
+      fDamping = (velEE.clone()).multiply(-bAir);
+
+      /* forces due to damping in divisions */
+      if (posEE.y < posWallHor.y) {
+        if(posEE.x < posWallVer.x){
+          /* top left quadrant */
+          fDiv = (velEE.clone()).multiply(-bTopLeft);
+        }else{
+          /* top right quadrant */
+          fDiv = (velEE.clone()).multiply(-bTopRight);
+        }
+      }else{
+        if(posEE.x < posWallVer.x){
+          /* bottom left quadrant */
+          fDiv = (velEE.clone()).multiply(-bBotLeft);
+        }else{
+          /* bottom right quadrant */
+          fDiv = (velEE.clone()).multiply(-bBotRight);
+        }
       }
 
-      /* compute error (random target position - EE position), and scale to pixels */
-      error = (randy.subtract(posEE)).multiply(pixelsPerMeter);
-      /* compute error (EE previous pos - EE current pos) */
-      errorPosEE = posEE.subtract(prevPosEE);
-      /* compute accumulated error - integral*/
-      cumError = errorPosEE.add(errorPosEE.multiply(timedif * 0.001));
+      fEnv.x = fDamping.x + fDiv.x;
+      fEnv.y = fDamping.y + fDiv.y;
 
-      //buff = (error.subtract(oldError)).divide(timedif);
-      //diff = (diff.multiply(smoothing)).add(buff.multiply(1.0 - smoothing));
+      fCalc.x = constrain(0.4*fEnv.x + 0.3*fEnvLast.x + 0.2*fEnvLastLast.x + 0.1*fEnvLastLastLast.x, -6, 6) * -1;
+      fCalc.y = constrain(0.4*fEnv.y + 0.3*fEnvLast.y + 0.2*fEnvLastLast.y + 0.1*fEnvLastLastLast.y, -6, 6);
 
-      /* compute differential error - derivative */
-      diff = errorPosEE.divide(timedif * 0.001);
-      //oldError = error;
-
-      /* update "previous" variables */
-      oldTime = this.performance.now();
-      prevPosEE = posEE;
-      
-      /* PID controller equation */
-      fCalc.x = constrain(kp * error.x + ki * cumError.x + kd * diff.x, -4, 4) * -1;
-      fCalc.y = constrain(kp * error.y + ki * cumError.y + kd * diff.y, -4, 4);
-      /* end forces due to guidance on EE */
+      // fCalc.x = constrain(0.1*fEnv.x + 0.2*fEnvLast.x + 0.3*fEnvLastLast.x + 0.4*fEnvLastLastLast.x, -6, 6) * -1;
+      // fCalc.y = constrain(0.1*fEnv.y + 0.2*fEnvLast.y + 0.3*fEnvLastLast.y + 0.4*fEnvLastLastLast.y, -6, 6);
 
       if(stop){
         /* send zero force to the device */
         fCalc.set(0, 0);
       }
 
+      /* updating "previous" variables */
+      fEnvLastLastLast = fEnvLastLast.clone();
+      fEnvLastLast = fEnvLast.clone();
+      fEnvLast = fEnv.clone();
+
       /* sum of forces */
       fEE = fCalc.clone();
-      /* end sum of forces */
 
-      var data = [angles[0], angles[1], positions[0], positions[1], randy.x, randy.y, newPantograph]
+      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
       /* post message to main script with position data */
       this.self.postMessage(data);
 

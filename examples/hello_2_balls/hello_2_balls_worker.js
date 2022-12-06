@@ -63,14 +63,16 @@ var rBall2 = 0.01; // ball 2
 var mBall1 = 0.05;  // mass (kg)
 var kBall1 = 445;  // spring constant (N/m)
 var bBall1 = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE when they are touching (m)
+// distance between the surfaces of the ball and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penBall1 = 0.0;  // m
 
 /* virtual ball 2 parameters */
 var mBall2 = 0.1;  // mass (kg)
 var kBall2 = 445;  // spring constant (N/m)
 var bBall2 = 3.7; // damping coefficient (kg/s)
-// distance between the surfaces of the ball and EE when they are touching (m)
+// distance between the surfaces of the ball and EE, 
+// which is zero / negative when they are touching / overlapping (m)
 var penBall2 = 0.0;  // m
 
 var bAir = 0.0;  // air damping coefficient (kg/s)
@@ -93,7 +95,8 @@ var fWall1 = new Vector(0, 0);  // force by the wall in ball 1
 var fWall2 = new Vector(0, 0);  // force by the wall in ball 2
 var kWall = 800; // spring constant (N/m)
 var bWall = 2; // damping coefficient (kg/s)
-// distances between the surfaces of the wall and ball when they are touching (m)
+// distances between the surfaces of the wall and ball, 
+// which is zero / negative when they are touching / overlapping (m)
 var penWall1 = new Vector(0, 0);
 var penWall2 = new Vector(0, 0);
 
@@ -106,6 +109,14 @@ var posWallTop = new Vector(0.0, 0.03);
 /* Device version */
 //var newPantograph = 0; // uncomment for 2DIYv1
 var newPantograph = 1; // uncomment for 2DIYv3
+
+/* Time variables */
+var startTime = 0;
+var codeTime = 0;
+var promTime = 0;
+
+/* Changing values */
+var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
 /* Device variables */
 var haplyBoard;
@@ -150,6 +161,7 @@ self.addEventListener("message", async function (e) {
 
   /**********  BEGIN CONTROL LOOP CODE *********************/
   while (true) {
+    startTime = this.performance.now();
 
     if (!run_once) {
       widgetOne.device_set_parameters();
@@ -284,9 +296,12 @@ self.addEventListener("message", async function (e) {
     widgetOne.set_device_torques(fEE.toArray());
     widgetOne.device_write_torques();
 
-    
-    // run every 1 ms
-    await new Promise(r => setTimeout(r, 1));
+    codeTime = this.performance.now();
+    promTime = looptime - (codeTime - startTime);
+    if(promTime > 0){
+      // run every ${looptime} ms
+      await new Promise(r => setTimeout(r, promTime));        
+    }
   }
 
   /**********  END CONTROL LOOP CODE *********************/
