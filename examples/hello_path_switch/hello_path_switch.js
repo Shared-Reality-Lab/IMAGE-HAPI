@@ -16,9 +16,13 @@ var newPantograph;
 /* end effector radius in meters */
 var rEE = 0.006;
 
-/* virtual wall parameters */
-var posWallVer = new p5.Vector(0.0, 0.12);
-var posWallHor = new p5.Vector(0.07, 0.07);
+/* path function parameters 1 */
+const pArray1 = [[-0.05, 0.035], [0.05, 0.06]]
+const pFunc1 = pArray1.map(([x,y]) => (new p5.Vector(x, y + 0.01)))
+
+/* path function parameters 2 */
+const pArray2 = [[0.05, 0.075], [-0.05, 0.1]]
+const pFunc2 = pArray2.map(([x,y]) => (new p5.Vector(x, y + 0.01)))
 
 /* generic data for a 2DOF device */
 /* joint space */
@@ -27,6 +31,7 @@ var torques = new p5.Vector(0, 0);
 
 /* task space */
 var posEE = new p5.Vector(0, 0);
+var fEE = new p5.Vector(0, 0);
 
 /* device graphical position */
 var deviceOrigin = new p5.Vector(0, 0);
@@ -36,9 +41,7 @@ const worldPixelWidth = 1000;
 const worldPixelHeight = 650;
 
 /* graphical elements */
-var pGraph, joint1, joint2, endEffector;
-var verWall;
-var horWall;
+var pGraph, joint1, joint2, endEffector, target;
 
 /* end elements definition *********************************************************************************************/
 
@@ -68,11 +71,24 @@ async function workerSetup() {
   worker.postMessage("test");
 }
 
+async function toggleWorker() {
+  /* post specific messages to trigger different options in the event listener of the worker */
+  /* to toggle the application of any force from the device to the user */
+  if(document.getElementById("button2").textContent == "Stop force"){
+    worker.postMessage("stop");
+    document.getElementById("button2").textContent = "Apply force"
+  }else{
+    worker.postMessage("start");
+    document.getElementById("button2").textContent = "Stop force"
+  }
+}
+
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_sections_worker.js", {type: "module"});
-  /* connect function to click event in button */
+  worker = new Worker("hello_path_switch_worker.js", {type: "module"});
+  /* connect functions to click event in buttons */
   document.getElementById("button").addEventListener("click", workerSetup);
+  document.getElementById("button2").addEventListener("click", toggleWorker);
   /* listen to messages from the worker */
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
@@ -81,7 +97,7 @@ if (window.Worker) {
     posEE.x = msg.data[2];
     posEE.y = msg.data[3];
     newPantograph = msg.data[4];
-
+    
   });
 
 }
@@ -92,7 +108,6 @@ else {
 /* helper functions section, place helper functions here ***************************************************************/
 function create_pantagraph() {
   var rEEAni = pixelsPerMeter * rEE;
-
   /* draw first joint */
   joint1 = ellipse(deviceOrigin.x, deviceOrigin.y, rEEAni, rEEAni)
   joint1.beginShape();
@@ -111,26 +126,31 @@ function create_pantagraph() {
 }
 
 
-function create_wall(x1, y1, x2, y2) {
+function create_line(x1, y1, x2, y2) {
   /* draw lines with coordinates in the device frame */
   x1 = pixelsPerMeter * x1;
   y1 = pixelsPerMeter * y1;
   x2 = pixelsPerMeter * x2;
   y2 = pixelsPerMeter * y2;
 
+  // return beginShape(LINE, deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y+y2);
   return line(deviceOrigin.x + x1, deviceOrigin.y + y1, deviceOrigin.x + x2, deviceOrigin.y + y2);
 }
 
 
 function update_animation(th1, th2, xE, yE) {
 
-  /* draw vertical division */
-  verWall = create_wall(posWallVer.x, posWallVer.y - 0.05, posWallVer.x, posWallVer.y);
-  verWall.stroke(color(0));
+  /* draw lines of the path 1 */
+  for(var i=1; i<pFunc1.length; i++){
+    ln = create_line(pFunc1[i-1].x, pFunc1[i-1].y, pFunc1[i].x, pFunc1[i].y);
+    ln.stroke(color(0));
+  }
 
-  /* draw horizontal division */
-  horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
-  horWall.stroke(color(0));
+  /* draw lines of the path 2 */
+  for(var i=1; i<pFunc2.length; i++){
+    ln = create_line(pFunc2[i-1].x, pFunc2[i-1].y, pFunc2[i].x, pFunc2[i].y);
+    ln.stroke(color(0));
+  }
 
   th1 = angles.x * (3.14 / 180);
   th2 = angles.y * (3.14 / 180);

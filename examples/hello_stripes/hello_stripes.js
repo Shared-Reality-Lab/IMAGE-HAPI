@@ -17,8 +17,9 @@ var newPantograph;
 var rEE = 0.006;
 
 /* virtual wall parameters */
-var posWallVer = new p5.Vector(0.0, 0.12);
-var posWallHor = new p5.Vector(0.07, 0.07);
+var start = new p5.Vector(-0.07, 0.045);
+var end = new p5.Vector(0.07, 0.13);
+var distBtwnWalls = 0.005;
 
 /* generic data for a 2DOF device */
 /* joint space */
@@ -70,7 +71,7 @@ async function workerSetup() {
 
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_sections_worker.js", {type: "module"});
+  worker = new Worker("hello_stripes_worker.js", {type: "module"});
   /* connect function to click event in button */
   document.getElementById("button").addEventListener("click", workerSetup);
   /* listen to messages from the worker */
@@ -111,7 +112,7 @@ function create_pantagraph() {
 }
 
 
-function create_wall(x1, y1, x2, y2) {
+function create_line(x1, y1, x2, y2) {
   /* draw lines with coordinates in the device frame */
   x1 = pixelsPerMeter * x1;
   y1 = pixelsPerMeter * y1;
@@ -124,13 +125,11 @@ function create_wall(x1, y1, x2, y2) {
 
 function update_animation(th1, th2, xE, yE) {
 
-  /* draw vertical division */
-  verWall = create_wall(posWallVer.x, posWallVer.y - 0.05, posWallVer.x, posWallVer.y);
-  verWall.stroke(color(0));
-
-  /* draw horizontal division */
-  horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
-  horWall.stroke(color(0));
+  /* draw horizontal lines */
+  for(var i=start.y; i<end.y; i+=distBtwnWalls){
+    horWall = create_line(start.x, i, end.x, i);
+    horWall.stroke(color(0));
+  }
 
   th1 = angles.x * (3.14 / 180);
   th2 = angles.y * (3.14 / 180);

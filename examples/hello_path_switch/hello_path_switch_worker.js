@@ -42,7 +42,6 @@ var prevPosEE = new Vector(0, 0);
 var posEE = new Vector(0, 0);
 var fCalc = new Vector(0, 0);
 var fEE = new Vector(0, 0);
-var randy = new Vector(0, 0.045);
 var startTime = 0;
 var codeTime = 0;
 var promTime = 0;
@@ -61,11 +60,27 @@ var diff = new Vector(0, 0);
 var buff = new Vector(0, 0);
 
 /* Changing values */
-var kp = 0.15; // kp += 0.01;
-var ki = 1.2; // ki += 0.00001;
-var kd = 1.5; // kd += 0.1;
-var smoothing = 0.8; // smoothing += 0.01;
-var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
+var kp = 0.06; // kp += 0.01;
+var ki = 3.1; // ki += 0.00001;
+var kd = 4.5; // kd += 0.1;
+var allowedError = 35;
+var smoothing = 0.80; // smoothing += 0.01;
+var looptime = 2; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
+
+/* Path function parameters 1 */
+const pArray1 = [[-0.05, 0.035], [0.05, 0.06]]
+const pFunc1 = pArray1.map(([x,y]) => (new Vector(x, y + 0.01)))
+const pInt1 = upsample(pFunc1, 3000);
+
+/* Path function parameters 2 */
+const pArray2 = [[0.05, 0.075], [-0.05, 0.1]]
+const pFunc2 = pArray2.map(([x,y]) => (new Vector(x, y + 0.01)))
+const pInt2 = upsample(pFunc2, 3000);
+
+/* Both sections in one array */
+const pFus = [pInt1, pInt2];
+var idxSection;
+var idxPoint;
 
 /* Device version */
 //var newPantograph = 0; // uncomment for 2DIYv1
@@ -76,9 +91,69 @@ var haplyBoard;
 var stop = false;
 
 
-function randGen(min, max){
-  /* to generate a random number within a range */
-  return Math.random() * (max - min) + min;
+function upsample(pointArray, k = 2000) {
+  /* To interpolate between the points in an array */
+  let upsampledSeg = [];
+
+  // for each point (except the last one)...
+  for (let n = 0; n < pointArray.length - 1; n++) {
+
+    let upsampleSubSeg = [];
+
+    // get the location of both points
+    const currentPoint = new Vector(pointArray[n].x, pointArray[n].y);
+    const nextPoint = new Vector(pointArray[n + 1].x, pointArray[n + 1].y);
+
+    const x1 = currentPoint.x;
+    const y1 = currentPoint.y;
+    const x2 = nextPoint.x;
+    const y2 = nextPoint.y;
+
+    // find vars for equation
+    const m = (y2 - y1) / (x2 - x1);
+    const c = m == Number.POSITIVE_INFINITY ? 0 : y2 - (m * x2);
+
+    // let the # of sample points be a function of the distance
+    const euclidean1 = Math.hypot((nextPoint.x - currentPoint.x), (nextPoint.y - currentPoint.y));
+    const samplePoints = Math.round(k * euclidean1);
+
+    // get distance between the two points
+    const sampleDistX = Math.abs(x2 - x1);
+    const sampleDistY = Math.abs(y2 - y1);
+
+    for (let v = 0; v < samplePoints; v++) {
+      // find the location of each interpolated point
+      const distX = (sampleDistX / (samplePoints - 1)) * v;
+      const distY = (sampleDistY / (samplePoints - 1)) * v;
+
+      let xLocation = 0;
+      let yLocation = 0;
+
+      // case where the x values are the same
+      if (x1 == x2) {
+        xLocation = x1;
+        yLocation = y2;
+      }
+
+      // case where y values are the same
+      else if (y1 == y2) {
+        xLocation = x2;
+        yLocation = y1;
+      }
+
+      // standard case
+      else {
+        xLocation = x2 > x1 ? x1 + distX : x1 - distX;
+        yLocation = m * xLocation + c;
+      }
+
+      // add new interpolated point to vector array for these two points
+      const p = new Vector(xLocation, yLocation);
+      upsampleSubSeg.push(p);
+    }
+    upsampledSeg.push(...upsampleSubSeg);
+  }
+  return [...upsampledSeg];
 }
 
 function constrain(n, min, max){
@@ -107,6 +182,7 @@ self.addEventListener("message", async function (e) {
     haplyBoard = new Board();
     await haplyBoard.init();
     console.log(haplyBoard);
+
     widgetOne = new Device(widgetOneID, haplyBoard);
 
     /* configure and declare device specifications according to the version */
@@ -120,9 +196,9 @@ self.addEventListener("message", async function (e) {
       widgetOne.add_encoder(1, 1, 97.23, 2048 * 2.5 * 1.0194 * 1.0154, 2); //right in theory
       widgetOne.add_encoder(2, 1, 82.77, 2048 * 2.5 * 1.0194, 1); //left in theory
 
-      /* generate random coordinates according to the work area of the device*/
-      randy.x = randGen(-0.07, 0.05);
-      randy.y = randGen(0.045, 0.1);
+      kp = 0.06;
+      ki = 3.1;
+      kd = 4.5;
     }else{
       pantograph = new Panto2DIYv1();
       widgetOne.set_mechanism(pantograph);
@@ -133,12 +209,16 @@ self.addEventListener("message", async function (e) {
       widgetOne.add_encoder(1, 1, 241, 10752, 2);
       widgetOne.add_encoder(2, 0, -61, 10752, 1);
       
-      /* generate random coordinates according to the work area of the device*/
-      randy.x = randGen(-0.1, 0.1);
-      randy.y = randGen(0.025, 0.1);
+      kp = 0.08;
+      ki = 3.1;
+      kd = 4.5;
+      allowedError = 200;
     }
 
     var run_once = false;
+
+    idxPoint = 0;
+    idxSection = 0;
     
     /************************ END SETUP CODE ************************* */
 
@@ -170,19 +250,19 @@ self.addEventListener("message", async function (e) {
       }
 
       /* compute error (random target position - EE position), and scale to pixels */
-      error = (randy.subtract(posEE)).multiply(pixelsPerMeter);
+      error = (pFus[idxSection][idxPoint].subtract(posEE)).multiply(pixelsPerMeter);
       /* compute error (EE previous pos - EE current pos) */
       errorPosEE = posEE.subtract(prevPosEE);
       /* compute accumulated error - integral*/
       cumError = errorPosEE.add(errorPosEE.multiply(timedif * 0.001));
 
-      //buff = (error.subtract(oldError)).divide(timedif);
+      //buff = (error.subtract(oldError)).divide(timedif);           
       //diff = (diff.multiply(smoothing)).add(buff.multiply(1.0 - smoothing));
-
+      
       /* compute differential error - derivative */
       diff = errorPosEE.divide(timedif * 0.001);
       //oldError = error;
-
+      
       /* update "previous" variables */
       oldTime = this.performance.now();
       prevPosEE = posEE;
@@ -190,18 +270,32 @@ self.addEventListener("message", async function (e) {
       /* PID controller equation */
       fCalc.x = constrain(kp * error.x + ki * cumError.x + kd * diff.x, -4, 4) * -1;
       fCalc.y = constrain(kp * error.y + ki * cumError.y + kd * diff.y, -4, 4);
+      // console.log(fCalc);
+
       /* end forces due to guidance on EE */
 
       if(stop){
         /* send zero force to the device */
         fCalc.set(0, 0);
+      }else if((Math.abs(error.x) < allowedError) && (Math.abs(error.y) < allowedError)){
+        /* evaluate if the error is between the range to allow to change - */
+        /* the target to the next point in the point array of the path */
+        idxPoint++;
+        if(idxPoint >= (pFus[idxSection].length)){
+          idxPoint = 0;
+          idxSection++;
+          if(idxSection >= (pFus.length)){
+            idxPoint = 0;
+            idxSection = 0;
+          }
+        }
       }
 
       /* sum of forces */
       fEE = fCalc.clone();
       /* end sum of forces */
 
-      var data = [angles[0], angles[1], positions[0], positions[1], randy.x, randy.y, newPantograph]
+      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
       /* post message to main script with position data */
       this.self.postMessage(data);
 

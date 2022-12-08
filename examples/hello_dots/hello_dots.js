@@ -16,9 +16,12 @@ var newPantograph;
 /* end effector radius in meters */
 var rEE = 0.006;
 
-/* virtual wall parameters */
-var posWallVer = new p5.Vector(0.0, 0.12);
-var posWallHor = new p5.Vector(0.07, 0.07);
+/* virtual dots parameters */
+var rDot = 0.001;
+var distBtwnRows = 0.005;
+var distBtwnCols = 0.005;
+var start = new p5.Vector(-14 * distBtwnCols, 9 * distBtwnRows); // preferably not above (-0.07, 0.045)
+var end = new p5.Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not below (0.07, 0.13)
 
 /* generic data for a 2DOF device */
 /* joint space */
@@ -37,8 +40,7 @@ const worldPixelHeight = 650;
 
 /* graphical elements */
 var pGraph, joint1, joint2, endEffector;
-var verWall;
-var horWall;
+var dot;
 
 /* end elements definition *********************************************************************************************/
 
@@ -70,7 +72,7 @@ async function workerSetup() {
 
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_sections_worker.js", {type: "module"});
+  worker = new Worker("hello_dots_worker.js", {type: "module"});
   /* connect function to click event in button */
   document.getElementById("button").addEventListener("click", workerSetup);
   /* listen to messages from the worker */
@@ -111,7 +113,7 @@ function create_pantagraph() {
 }
 
 
-function create_wall(x1, y1, x2, y2) {
+function create_line(x1, y1, x2, y2) {
   /* draw lines with coordinates in the device frame */
   x1 = pixelsPerMeter * x1;
   y1 = pixelsPerMeter * y1;
@@ -122,15 +124,23 @@ function create_wall(x1, y1, x2, y2) {
 }
 
 
+function create_dot(x, y, rCircle) {
+  x = x * pixelsPerMeter;
+  y = y * pixelsPerMeter;
+  rCircle = pixelsPerMeter * rCircle;
+  return ellipse(deviceOrigin.x + x, deviceOrigin.y + y, 2 * rCircle);
+}
+
+
 function update_animation(th1, th2, xE, yE) {
 
-  /* draw vertical division */
-  verWall = create_wall(posWallVer.x, posWallVer.y - 0.05, posWallVer.x, posWallVer.y);
-  verWall.stroke(color(0));
-
-  /* draw horizontal division */
-  horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
-  horWall.stroke(color(0));
+  /* draw rows of dots */
+  for(var i=start.x; i<=end.x; i+=distBtwnCols){
+    for(var j=start.y; j<=end.y; j+=distBtwnRows){
+      dot = create_dot(i, j, rDot);
+      dot.stroke(color(0));
+    }
+  }
 
   th1 = angles.x * (3.14 / 180);
   th2 = angles.y * (3.14 / 180);

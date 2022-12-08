@@ -68,11 +68,24 @@ async function workerSetup() {
   worker.postMessage("test");
 }
 
+async function toggleWorker() {
+  /* post specific messages to trigger different options in the event listener of the worker */
+  /* to toggle the application of any force from the device to the user */
+  if(document.getElementById("button2").textContent == "Stop force"){
+    worker.postMessage("stop");
+    document.getElementById("button2").textContent = "Apply force"
+  }else{
+    worker.postMessage("start");
+    document.getElementById("button2").textContent = "Stop force"
+  }
+}
+
 if (window.Worker) {
   // console.log("here");
-  worker = new Worker("hello_sections_worker.js", {type: "module"});
+  worker = new Worker("hello_ice_worker.js", {type: "module"});
   /* connect function to click event in button */
   document.getElementById("button").addEventListener("click", workerSetup);
+  document.getElementById("button2").addEventListener("click", toggleWorker);
   /* listen to messages from the worker */
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
@@ -125,7 +138,7 @@ function create_wall(x1, y1, x2, y2) {
 function update_animation(th1, th2, xE, yE) {
 
   /* draw vertical division */
-  verWall = create_wall(posWallVer.x, posWallVer.y - 0.05, posWallVer.x, posWallVer.y);
+  verWall = create_wall(posWallVer.x, posWallVer.y - 0.1, posWallVer.x, posWallVer.y);
   verWall.stroke(color(0));
 
   /* draw horizontal division */
