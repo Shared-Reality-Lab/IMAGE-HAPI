@@ -4,7 +4,7 @@ posEE | position of the end effector | given
 posEELast | last position of the end effector | when a new contact is made, posEELast=posEE
 velEE | velocity of the end effector | posEE-posEELast/dt
 posBall | position of the ball | given
-velBall | velocity of the ball | 
+velBall | velocity of the ball | <ul><li>initial: -velEE</li><li>update: (fBall/mBall)*dt+velBall</li></ul>
 posEEToBall | displacement between EE and ball | posBall-posEE
 posEEToBallMagnitude | distance between EE and ball | pythagorean theorem
 velEEToBall | velocity of EE relvative of the ball | fContact*((velBall-velEE)⋅fContact) (keeps in the vellEEToBall variable how much of the force vector (fContact) is applied in the direction of the motion vector (velEEToBall).)
