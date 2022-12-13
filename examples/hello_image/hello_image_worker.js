@@ -38,24 +38,61 @@ var positions = new Vector(0, 0);
 /* Screen and world setup parameters */
 var pixelsPerMeter = 4000.0;
 
+/* Radius */
+var rEE = 0.006; // end effector
+
 /* task space */
-var prevPosEE = new Vector(0, 0);
 var posEE = new Vector(0, 0);
-var fCalc = new Vector(0, 0);
+var posEELast = new Vector(0, 0);
+var velEE = new Vector(0, 0);
+var dt = 1/1000.0;
+
+var posEEToObj = [];
+var posEEToObjMagnitude = [];
+var velEEToObj = [];
+var velEEToObjMagnitude = [];
+
+/* Forces */
 var fEE = new Vector(0, 0);
+var fDamping = new Vector(0, 0);
+
+/* virtual division parameters */
+var fDiv = new Vector(0, 0); // force in the division
+var fEnv = new Vector(0, 0);
+var fEnvLast = new Vector(0, 0);
+var fEnvLastLast = new Vector(0, 0);
+var fEnvLastLastLast = new Vector(0, 0);
+var fCalc = new Vector(0, 0);
+var fEdge = new Vector(0, 0); // additional force to feel better the edge
+
+/* damping coefficients (kg/s) */
+var bAir = 0;  // air
+var b = 4;
+var bEdge = 100; // edge effect
+var kEdge = 5000; // edge effect
+
+/* virtual object parameters */
+var fAllObj = new Vector(0, 0);
+var fObj = []; // force by the objects
+var kObj = 3500; // spring constant (N/m)
+var bObj = 1; // damping coefficient (kg/s)
+// distance between the surfaces of the dot and EE, 
+// which is zero / negative when they are touching / overlapping (m)
+var penObj = [];
+
+/* Time variables */
 var startTime = 0;
 var codeTime = 0;
 var promTime = 0;
 
-/* for calculations */
+/* for logic */
+var prevSeg = -1;
 var currSeg = -1;
+var txtrSeg = 0;
+var changeTxSeg = false;
 
 /* Changing values */
-var kp = 0.06; // kp += 0.01;
-var ki = 3.1; // ki += 0.00001;
-var kd = 4.5; // kd += 0.1;
-var smoothing = 0.80; // smoothing += 0.01;
-var looptime = 2; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
+var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 
 /* Path function parameters */
 var segments, objects;
@@ -67,6 +104,8 @@ var newPantograph = 0; // uncomment for 2DIYv1
 /* Device variables */
 var haplyBoard;
 var stop = false;
+var remObj = false;
+var remSeg = false;
 
 
 function constrain(n, min, max){
@@ -81,23 +120,74 @@ function constrain(n, min, max){
 }
 
 
-function jelly(level) {
-    
+function edge() {
+  var dif = (posEE.clone()).subtract(posEELast);
+  if(prevSeg != currSeg){
+    fEdge = fEdge.add(((dif.clone()).multiply(4 * -kEdge))).add((velEE.clone()).multiply(-bEdge));
+    fCalc.x = constrain(fCalc.x + fEdge.x, -8, 8);
+    fCalc.y = constrain(fCalc.y + fEdge.y, -8, 8);
+    // console.log("edge");
+  }
+}
+
+
+function jelly() {
+  fDiv = (velEE.clone()).multiply(-b);
+
+  fEnv.x = fDamping.x + fDiv.x;
+  fEnv.y = fDamping.y + fDiv.y;
+  fCalc.x = constrain(0.4*fEnv.x + 0.3*fEnvLast.x + 0.2*fEnvLastLast.x + 0.1*fEnvLastLastLast.x, -6, 6) * -1;
+  fCalc.y = constrain(0.4*fEnv.y + 0.3*fEnvLast.y + 0.2*fEnvLastLast.y + 0.1*fEnvLastLastLast.y, -6, 6);
+
+  /* updating "previous" variables */
+  fEnvLastLastLast = fEnvLastLast.clone();
+  fEnvLastLast = fEnvLast.clone();
+  fEnvLast = fEnv.clone();
 }
 
 
 function ice() {
-    
+  fDiv = (velEE.clone()).multiply(b);
+
+  fEnv.x = fDamping.x + fDiv.x;
+  fEnv.y = fDamping.y + fDiv.y;
+  fCalc.x = constrain(0.4*fEnv.x + 0.3*fEnvLast.x + 0.2*fEnvLastLast.x + 0.1*fEnvLastLastLast.x, -6, 6) * -1;
+  fCalc.y = constrain(0.4*fEnv.y + 0.3*fEnvLast.y + 0.2*fEnvLastLast.y + 0.1*fEnvLastLastLast.y, -6, 6);
+  
+  /* updating "previous" variables */
+  fEnvLastLastLast = fEnvLastLast.clone();
+  fEnvLastLast = fEnvLast.clone();
+  fEnvLast = fEnv.clone();
 }
 
 
-function stripes() {
+function forceFromObjs(){
+  /* forces due to dots on EE */
+  for(let i = 0; i < objects.length; i++){  
+    posEEToObj[i].x = objects[i]["centroid"][0] - posEE.x;
+    posEEToObj[i].y = objects[i]["centroid"][1] - posEE.y;
+    posEEToObjMagnitude[i] = posEEToObj[i].mag();
+    penObj[i] = posEEToObjMagnitude[i] - (objects[i]["minRadius"] + rEE);
     
-}
+    if(penObj[i] < 0){
+      // console.log(i);
 
+      fObj[i] = posEEToObj[i].normalize();
 
-function dots() {
-    
+      velEEToObj[i] = (velEE.clone()).multiply(-1);
+      velEEToObj[i] = (fObj[i].clone()).multiply(velEEToObj[i].dot(fObj[i]));
+      velEEToObjMagnitude[i] = velEEToObj[i].mag();
+
+      /* since penObj[i] is negative kObj must be negative to ensure the force acts along the end-effector to the ball */
+      fAllObj = fAllObj.add((fObj[i].clone()).multiply((-kObj * penObj[i]) - (bObj * velEEToObjMagnitude[i])));
+    }
+    else {
+      fObj[i].set(0, 0);
+    }
+  }
+
+  fCalc.x = fCalc.x + fAllObj.x;
+  fCalc.y = fCalc.y + (-1 * fAllObj.y);
 }
 
 
@@ -108,6 +198,16 @@ self.addEventListener("message", async function (e) {
     stop = true;
   }else if(e.data == "start"){
     stop = false;
+  }else if(e.data == "next"){
+    changeTxSeg = true;
+  }else if(e.data == "remove_obj"){
+    remObj = true;
+  }else if(e.data == "show_obj"){
+    remObj = false;
+  }else if(e.data == "remove_seg"){
+    remSeg = true;
+  }else if(e.data == "show_seg"){
+    remSeg = false;
   }else{
     /************ BEGIN SETUP CODE *****************/
     console.log('in worker');
@@ -115,12 +215,26 @@ self.addEventListener("message", async function (e) {
     /* get image data*/
     segments = e.data[0];
     objects = e.data[1];
-    // console.log(segments);
-    // for(let i = 0; i < segments.length; i++){
-    //   for(let j = 0; j < segments[i].length; j++){
-    //       console.log(segments[i][j]);
-    //   }
-    // }
+    // console.log(objects);
+
+    /* initialize arrays with image data */
+    posEEToObj.length = objects.length;
+    posEEToObj.fill(new Vector(0, 0));
+
+    posEEToObjMagnitude.length = objects.length;
+    posEEToObjMagnitude.fill(0);
+
+    velEEToObj.length = objects.length;
+    velEEToObj.fill(new Vector(0, 0));
+
+    velEEToObjMagnitude.length = objects.length;
+    velEEToObjMagnitude.fill(0);
+
+    fObj.length = objects.length;
+    fObj.fill(new Vector(0, 0));
+
+    penObj.length = objects.length;
+    penObj.fill(0);
 
     /* initialize device */
     haplyBoard = new Board();
@@ -171,31 +285,60 @@ self.addEventListener("message", async function (e) {
       posEE.set(positions);
       posEE.x = -posEE.x; // device_to_graphics function
 
+      velEE.set(((posEE.clone()).subtract(posEELast)).divide(dt));
+
       /* haptic physics force calculation */
+      /* update "previous" variable */
+      posEELast = posEE.clone();
+      prevSeg = currSeg;
+      
+      /* forces due to damping in air */
+      fDamping = (velEE.clone()).multiply(-bAir);
+
       /* forces due to guidance on EE */
       fCalc.set(0, 0);
+      fEdge.set(0, 0);
+      fAllObj.set(0, 0);
+
+      if(changeTxSeg){
+        changeTxSeg = false;
+        txtrSeg++;
+        if(txtrSeg >= (segments.length)){
+          txtrSeg = 0;
+        }
+        // console.log(txtrSeg);
+      }
       
       if(stop){
         /* send zero force to the device */
         fCalc.set(0, 0);
       }else{
-        segLoop: // label to break both loops at once
-        for(let i = 0; i < segments.length; i++){
-          for(let j = 0; j < segments[i].length; j++){
-            if(pointInPolygon(segments[i][j], [posEE.x, posEE.y])){
-              currSeg = i;
+        /* find in which segment the EE is currently located */
+        if(!remSeg){
+          for(let j = 0; j < segments[txtrSeg].length; j++){
+            if(pointInPolygon(segments[txtrSeg][j], [posEE.x, posEE.y])){
+              currSeg = txtrSeg;
+              jelly();
+              edge();
               // console.log(currSeg);
-              break segLoop;
+              break;
+            }
+            else{
+              currSeg = -1;
+              edge();
             }
           }
+        }
+
+        if(!remObj){
+          forceFromObjs();
         }
       }
 
       /* sum of forces */
       fEE = fCalc.clone();
-      /* end sum of forces */
 
-      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph]
+      var data = [angles[0], angles[1], positions[0], positions[1], newPantograph, txtrSeg]
       /* post message to main script with position data */
       this.self.postMessage(data);
 

@@ -24,6 +24,8 @@ var objWorld = [];
 var preprData, segments, objects;
 var currSegment, currContour;
 var scaleFactor = 0.65;
+var txtrSeg = 0;
+var drawTog = false;
 
 /* generic data for a 2DOF device */
 /* joint space */
@@ -43,6 +45,8 @@ const worldPixelHeight = 650;
 
 /* graphical elements */
 var segm, pGraph, joint1, joint2, endEffector, target;
+var remObj = false;
+var remSeg = false;
 
 /* end elements definition *********************************************************************************************/
 
@@ -95,9 +99,15 @@ async function setup() {
         toGraphicsX(objects[i]["dimensions"][2]),
         toGraphicsY(objects[i]["dimensions"][3])
       ]
+      tmp["minRadius"] = Math.min(
+        toGraphicsX(objects[i]["dimensions"][2]) - toGraphicsX(objects[i]["dimensions"][0]),
+        toGraphicsY(objects[i]["dimensions"][3]) - toGraphicsY(objects[i]["dimensions"][1])
+      ) / 2;
       objWorld.push(tmp);
     }
     // console.log(objWorld);
+
+    drawTog = true;
 
   });
 }
@@ -106,9 +116,9 @@ function draw() {
   /* put graphical code here, runs repeatedly at defined framerate in setup, else default at 60fps: */
   background(255);
   update_animation(this.angles.x * radsPerDegree,
-    this.angles.y * radsPerDegree,
-    this.posEE.x,
-    this.posEE.y);
+  this.angles.y * radsPerDegree,
+  this.posEE.x,
+  this.posEE.y);
 }
 
 
@@ -131,12 +141,48 @@ async function toggleWorker() {
   }
 }
 
+async function toggleObjects() {
+  /* post specific messages to trigger different options in the event listener of the worker */
+  /* to toggle the application of any force from the device to the user */
+  if(document.getElementById("button4").textContent == "Remove objects"){
+    worker.postMessage("remove_obj");
+    document.getElementById("button4").textContent = "Show objects"
+    remObj = true;
+  }else{
+    worker.postMessage("show_obj");
+    document.getElementById("button4").textContent = "Remove objects"
+    remObj = false;
+  }
+}
+
+async function toggleSegments() {
+  /* post specific messages to trigger different options in the event listener of the worker */
+  /* to toggle the application of any force from the device to the user */
+  if(document.getElementById("button5").textContent == "Remove segments"){
+    worker.postMessage("remove_seg");
+    document.getElementById("button5").textContent = "Show segments"
+    remSeg = true;
+  }else{
+    worker.postMessage("show_seg");
+    document.getElementById("button5").textContent = "Remove segments"
+    remSeg = false;
+  }
+}
+
+async function changeTextureSeg() {
+  /* post specific message to change the current texturized segment */
+  worker.postMessage("next");
+}
+
 if (window.Worker) {
   // console.log("here");
   worker = new Worker("hello_image_worker.js", {type: "module"});
   /* connect functions to click event in buttons */
   document.getElementById("button").addEventListener("click", workerSetup);
   document.getElementById("button2").addEventListener("click", toggleWorker);
+  document.getElementById("button3").addEventListener("click", changeTextureSeg);
+  document.getElementById("button4").addEventListener("click", toggleObjects);
+  document.getElementById("button5").addEventListener("click", toggleSegments);
   /* listen to messages from the worker */
   worker.addEventListener("message", function (msg) {
     //retrieve data from worker.js needed for update_animation()
@@ -145,6 +191,7 @@ if (window.Worker) {
     posEE.x = msg.data[2];
     posEE.y = msg.data[3];
     newPantograph = msg.data[4];
+    txtrSeg = msg.data[5];
     
   });
 
@@ -199,33 +246,37 @@ function shaping(contour){
 
 function update_animation(th1, th2, xE, yE) {
 
-  /* draw lines of the segments */
-  for(let i = 0; i < segWorld.length; i++){
-    currSegment = segWorld[i];
-    for(let j = 0; j < currSegment.length; j++){
-      currContour = currSegment[j];
-      for(let k = 15; k < currContour.length; k=k+15){
-        ln = create_line(currContour[k-15].x, currContour[k-15].y, currContour[k].x, currContour[k].y);
-        if(i < clr.length){
-          ln.stroke(color(clr[i]));
+  if(drawTog){
+    /* draw lines of the segments */
+    if(!remSeg){  // for(let i = 0; i < segWorld.length; i++){
+      currSegment = segWorld[txtrSeg];
+      for(let j = 0; j < currSegment.length; j++){
+        currContour = currSegment[j];
+        for(let k = 15; k < currContour.length; k=k+15){
+          ln = create_line(currContour[k-15].x, currContour[k-15].y, currContour[k].x, currContour[k].y);
+          ln.stroke(color("indigo"));
         }
+      }
+    // }
+    }
+
+    if(!remObj){ 
+      /* draw circles representing objects */
+      for(let i = 0; i < objWorld.length; i++){
+        o = objWorld[i];
+        cir = create_obj(
+          o["centroid"][0],
+          o["centroid"][1],
+          o["dimensions"][0],
+          o["dimensions"][1],
+          o["dimensions"][2],
+          o["dimensions"][3]
+        );
+        cir.stroke(color("crimson"));
       }
     }
   }
 
-  // /* draw circles representing objects */
-  // for(let i = 0; i < objWorld.length; i++){
-  //   o = objWorld[i];
-  //   cir = create_obj(
-  //     o["centroid"][0],
-  //     o["centroid"][1],
-  //     o["dimensions"][0],
-  //     o["dimensions"][1],
-  //     o["dimensions"][2],
-  //     o["dimensions"][3]
-  //   );
-  //   cir.stroke(color(0));
-  // }
 
   th1 = angles.x * (3.14 / 180);
   th2 = angles.y * (3.14 / 180);
