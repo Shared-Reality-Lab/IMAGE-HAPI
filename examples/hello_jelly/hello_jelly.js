@@ -142,8 +142,8 @@ function update_animation(th1, th2, xE, yE) {
   verWall.stroke(color(0));
 
   /* draw horizontal division */
-  horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
-  horWall.stroke(color(0));
+  // horWall = create_wall(posWallHor.x * -1, posWallHor.y, posWallHor.x, posWallHor.y);
+  // horWall.stroke(color(0));
 
   th1 = angles.x * (3.14 / 180);
   th2 = angles.y * (3.14 / 180);
