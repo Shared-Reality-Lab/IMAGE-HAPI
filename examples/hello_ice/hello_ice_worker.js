@@ -56,10 +56,10 @@ var fCalc = new Vector(0, 0);
 
 /* damping coefficients (kg/s) */
 var bAir = 0;  // air
-var bTopLeft = 1; // top left quadrant
-var bTopRight = 2; // top right quadrant
-var bBotLeft = 3; // bottom left quadrant
-var bBotRight = 4; // bottom right quadrant
+var bTopLeft = 0; // top left quadrant
+var bTopRight = 1.2; // top right quadrant
+var bBotLeft = 0; // bottom left quadrant
+var bBotRight = 1.2; // bottom right quadrant
 
 /* division positions */
 var posWallVer = new Vector(0.0, 0.12);
