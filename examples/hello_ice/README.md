@@ -4,9 +4,11 @@ This folder contains the exploratory example named `hello_ice`.
 
 ## What will you experience?
 
-There are two lines that go through the work area, which set up a total of four sections.
+There is a line that goes through the work area, which sets up two sections.
 
 Each section has a different viscosity/damping; the user can feel it by moving the end effector through the workspace. The damping is **negative**, so the device follows the movements of the user, making it easier to move around and creating a sensation of sliding through the surface.
+
+The left section has no force and the right one shows the effect with 1.2 negative damping.
 
 ## Contents
 
