@@ -169,6 +169,7 @@ function forceFromObjs(){
     posEEToObjMagnitude[i] = posEEToObj[i].mag();
     penObj[i] = posEEToObjMagnitude[i] - (objects[i]["minRadius"] + rEE);
     
+    // if the end effector is touching or overlapping with an object
     if(penObj[i] < 0){
       // console.log(i);
 
@@ -295,15 +296,17 @@ self.addEventListener("message", async function (e) {
       /* forces due to damping in air */
       fDamping = (velEE.clone()).multiply(-bAir);
 
-      /* forces due to guidance on EE */
+      /* forces due to segments and objects on EE */
       fCalc.set(0, 0);
       fEdge.set(0, 0);
       fAllObj.set(0, 0);
 
       if(changeTxSeg){
+        /* change to the next segment */
         changeTxSeg = false;
         txtrSeg++;
         if(txtrSeg >= (segments.length)){
+          /* after the last segment, return to the first */
           txtrSeg = 0;
         }
         // console.log(txtrSeg);
@@ -313,11 +316,14 @@ self.addEventListener("message", async function (e) {
         /* send zero force to the device */
         fCalc.set(0, 0);
       }else{
-        /* find in which segment the EE is currently located */
         if(!remSeg){
+          /* if showing segments is activated */
+          /* find if the EE is inside the currently selected segment */
           for(let j = 0; j < segments[txtrSeg].length; j++){
             if(pointInPolygon(segments[txtrSeg][j], [posEE.x, posEE.y])){
               currSeg = txtrSeg;
+              /* if the EE is inside, compute the forces, check if it
+                entered the segment recently and stop looking */
               jelly();
               edge();
               // console.log(currSeg);
@@ -325,12 +331,16 @@ self.addEventListener("message", async function (e) {
             }
             else{
               currSeg = -1;
+              /* if the EE is outside, only check if it exit the selected
+                segment recently */
               edge();
             }
           }
         }
 
         if(!remObj){
+          /* if showing segments is activated */
+          /* compute the forces for each object */
           forceFromObjs();
         }
       }

@@ -64,9 +64,10 @@ var penDot = new Vector(0, 0);
 var rDot = 0.001;
 var distBtwnRows = 0.005;
 var distBtwnCols = 0.005;
+// start and end vectors are multiples of distances between rows and columns to make the logic with module operator work
 var start = new Vector(-14 * distBtwnCols, 9 * distBtwnRows); // preferably not above (-0.07, 0.045)
 var end = new Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not below (0.07, 0.13)
-var edgeMargin = 0.1;
+var edgeMargin = 0.1; // equals to 10% out of start or end distance of extra margin
 
 /* Device version */
 var newPantograph = 0; // uncomment for 2DIYv1
@@ -152,7 +153,7 @@ self.addEventListener("message", async function (e) {
     posEEToDotMagnitude = posEEToDot.mag();
     penDot = posEEToDotMagnitude - (rDot + rEE);
     
-    // if the EE is on the area with dots and is overlapping with one (there's a margin in case a dot is on the edge)
+    // if the EE is on the area with dots and is overlapping with one (considering a margin in case a dot is right on the edge)
     if(posEE.y > (start.y)*(1+edgeMargin) && posEE.y < (end.y)*(1+edgeMargin) &&
        posEE.x > (start.x)*(1+edgeMargin) && posEE.x < (end.x)*(1+edgeMargin) && penDot < 0){
 
