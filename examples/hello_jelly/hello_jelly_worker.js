@@ -57,8 +57,8 @@ var fCalc = new Vector(0, 0);
 /* damping coefficients (kg/s) */
 var bAir = 0;  // air
 var bTopLeft = 1; // top left quadrant
-var bTopRight = 2; // top right quadrant
-var bBotLeft = 3; // bottom left quadrant
+var bTopRight = 4; // top right quadrant
+var bBotLeft = 1; // bottom left quadrant
 var bBotRight = 4; // bottom right quadrant
 
 /* division positions */

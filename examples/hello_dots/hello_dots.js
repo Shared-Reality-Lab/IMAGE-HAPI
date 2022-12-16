@@ -20,7 +20,9 @@ var rEE = 0.006;
 var rDot = 0.001;
 var distBtwnRows = 0.005;
 var distBtwnCols = 0.005;
+// start vector corresponds to the left top corner of the area with the pattern
 var start = new p5.Vector(-14 * distBtwnCols, 9 * distBtwnRows); // preferably not above (-0.07, 0.045)
+// end vector corresponds to the right bottom corner of the area with the pattern
 var end = new p5.Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not below (0.07, 0.13)
 
 /* generic data for a 2DOF device */

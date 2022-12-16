@@ -57,9 +57,11 @@ var penWall = new Vector(0, 0);
 var penWallMagnitude = new Vector(0, 0);
 
 /* division positions */
-var start = new Vector(-0.07, 0.045);
-var end = new Vector(0.07, 0.13);
 var distBtwnWalls = 0.005;
+// start vector corresponds to the left top corner of the area with the pattern
+var start = new Vector(-14 * distBtwnWalls, 9 * distBtwnWalls); // preferably not above (-0.07, 0.045)
+// end vector corresponds to the right bottom corner of the area with the pattern
+var end = new Vector(14 * distBtwnWalls, 26 * distBtwnWalls); // preferably not below (0.07, 0.13)
 
 /* Device version */
 var newPantograph = 0; // uncomment for 2DIYv1

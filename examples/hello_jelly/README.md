@@ -4,9 +4,11 @@ This folder contains the exploratory example named `hello_jelly`.
 
 ## What will you experience?
 
-There are two lines that go through the work area, which set up a total of four sections.
+There is a line that goes through the work area, which sets up two sections.
 
 Each section has a different viscosity/damping; the user can feel it by moving the end effector through the workspace.
+
+The left section has level 1 damping and the right one has level 4.
 
 ## Contents
 

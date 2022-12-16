@@ -17,9 +17,11 @@ var newPantograph;
 var rEE = 0.006;
 
 /* virtual wall parameters */
-var start = new p5.Vector(-0.07, 0.045);
-var end = new p5.Vector(0.07, 0.13);
 var distBtwnWalls = 0.005;
+// start vector corresponds to the left top corner of the area with the pattern
+var start = new p5.Vector(-14 * distBtwnWalls, 9 * distBtwnWalls); // preferably not above (-0.07, 0.045)
+// end vector corresponds to the right bottom corner of the area with the pattern
+var end = new p5.Vector(14 * distBtwnWalls, 26 * distBtwnWalls); // preferably not below (0.07, 0.13)
 
 /* generic data for a 2DOF device */
 /* joint space */
