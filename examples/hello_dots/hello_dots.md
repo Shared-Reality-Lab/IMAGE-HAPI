@@ -19,6 +19,6 @@ penDot | distance between closet dot and EE | posEEToDotMagnitude - (rDot + rEE)
 rDot | radius of dot | given
 distBtwnRows | distance rows | given
 distBtwnCols | distance cols | given
-start | start of dots pattern | 
-end | end of dots pattern | 
+start | start of dots pattern | given
+end | end of dots pattern | given
 edgeMargin | allows to execute the if condition at 10% more of the dotted area, pervent the case that dots are at the boundary of dots pattern | given

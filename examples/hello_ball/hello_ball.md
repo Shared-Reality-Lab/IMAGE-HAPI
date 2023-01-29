@@ -1,6 +1,6 @@
-| variable | Description | How to get
+| variable | Description | How to get |
 | ----------- | ----------- | ----------- |
-posEE | position of the end effector | given
+posEE | position of the end effector | read from device
 posEELast | last position of the end effector | when a new contact is made, posEELast=posEE
 velEE | velocity of the end effector | posEE-posEELast/dt
 posBall | position of the ball | given
