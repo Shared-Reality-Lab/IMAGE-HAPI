@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git+https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI.git"
   },
+  "scripts": {
+    "build": "tsc"
+  },
   "author": "",
   "license": "GPL-3.0-or-later",
   "bugs": {

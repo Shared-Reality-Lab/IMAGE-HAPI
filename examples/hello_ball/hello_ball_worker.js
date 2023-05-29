@@ -84,7 +84,7 @@ var posWallRight = new Vector(0.07, 0.03);
 var posWallBottom = new Vector(0.0, 0.1);
 
 /* Device version */
-//var newPantograph = 0; // uncomment for 2DIYv1
+// var newPantograph = 0; // uncomment for 2DIYv1
 var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */

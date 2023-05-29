@@ -66,8 +66,8 @@ var posWallVer = new Vector(0.0, 0.12);
 var posWallHor = new Vector(0.07, 0.07);
 
 /* Device version */
-var newPantograph = 0; // uncomment for 2DIYv1
-// var newPantograph = 1; // uncomment for 2DIYv3
+// var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */
 var startTime = 0;

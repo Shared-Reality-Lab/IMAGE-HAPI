@@ -64,8 +64,8 @@ var start = new Vector(-14 * distBtwnWalls, 9 * distBtwnWalls); // preferably no
 var end = new Vector(14 * distBtwnWalls, 26 * distBtwnWalls); // preferably not below (0.07, 0.13)
 
 /* Device version */
-var newPantograph = 0; // uncomment for 2DIYv1
-// var newPantograph = 1; // uncomment for 2DIYv3
+// var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */
 var startTime = 0;

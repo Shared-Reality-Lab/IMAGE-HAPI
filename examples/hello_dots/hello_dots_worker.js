@@ -54,8 +54,8 @@ var fDamping = new Vector(0, 0);
 
 /* virtual dot parameters */
 var fDot = new Vector(0, 0); // force by the dots
-var kDot = 2500; // spring constant (N/m)
-var bDot = 5; // damping coefficient (kg/s)
+var kDot = 100; // spring constant (N/m)
+var bDot = 2; // damping coefficient (kg/s)
 // distance between the surfaces of the dot and EE, 
 // which is zero / negative when they are touching / overlapping (m)
 var penDot = new Vector(0, 0);
@@ -70,8 +70,8 @@ var end = new Vector(14 * distBtwnCols, 26 * distBtwnRows); // preferably not be
 var edgeMargin = 0.1; // equals to 10% out of start or end distance of extra margin
 
 /* Device version */
-var newPantograph = 0; // uncomment for 2DIYv1
-// var newPantograph = 1; // uncomment for 2DIYv3
+//var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */
 var startTime = 0;

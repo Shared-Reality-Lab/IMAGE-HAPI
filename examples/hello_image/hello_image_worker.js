@@ -67,14 +67,14 @@ var fEdge = new Vector(0, 0); // additional force to feel better the edge
 
 /* damping coefficients (kg/s) */
 var bAir = 0;  // air
-var b = 4;
-var bEdge = 100; // edge effect
-var kEdge = 5000; // edge effect
+var b = 1;
+var bEdge = 10; // edge effect
+var kEdge = 500; // edge effect
 
 /* virtual object parameters */
 var fAllObj = new Vector(0, 0);
 var fObj = []; // force by the objects
-var kObj = 3500; // spring constant (N/m)
+var kObj = 350; // spring constant (N/m)
 var bObj = 1; // damping coefficient (kg/s)
 // distance between the surfaces of the dot and EE, 
 // which is zero / negative when they are touching / overlapping (m)
@@ -98,8 +98,8 @@ var looptime = 1; // in ms [0.5(2000), 1(1000), 2(500), 4(250)]
 var segments, objects;
 
 /* Device version */
-var newPantograph = 0; // uncomment for 2DIYv1
-// var newPantograph = 1; // uncomment for 2DIYv3
+// var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Device variables */
 var haplyBoard;

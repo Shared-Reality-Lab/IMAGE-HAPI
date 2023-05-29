@@ -56,18 +56,18 @@ var fCalc = new Vector(0, 0);
 
 /* damping coefficients (kg/s) */
 var bAir = 0;  // air
-var bTopLeft = 1; // top left quadrant
-var bTopRight = 4; // top right quadrant
-var bBotLeft = 1; // bottom left quadrant
-var bBotRight = 4; // bottom right quadrant
+var bTopLeft = 0.25; // top left quadrant
+var bTopRight = 1; // top right quadrant
+var bBotLeft = 0.5; // bottom left quadrant
+var bBotRight = 1.5; // bottom right quadrant
 
 /* division positions */
 var posWallVer = new Vector(0.0, 0.12);
 var posWallHor = new Vector(0.07, 0.07);
 
 /* Device version */
-var newPantograph = 0; // uncomment for 2DIYv1
-// var newPantograph = 1; // uncomment for 2DIYv3
+// var newPantograph = 0; // uncomment for 2DIYv1
+var newPantograph = 1; // uncomment for 2DIYv3
 
 /* Time variables */
 var startTime = 0;
