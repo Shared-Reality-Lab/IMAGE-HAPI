@@ -31,3 +31,10 @@ The user can freely move the end effector to explore the elements in the work ar
 Rather than let the user explore the workspace and move the end effector, the end effector is the one moving the hand of the user.
 
 Guidance examples use a PID controller to give an smooth response and prevent the end effector of delivering too strong forces, oscillations or other abrupt behaviors.
+
+## Libraries
+
+In addition to the hAPI port contained in this repository, there are some additional dependencies under the `libraries` directory. These include:
+
+* `pointInPolygon.js`, an implementation of the even-odd algorithm [from ClaasM](https://github.com/ClaasM/Algorithms/tree/master/src/point_in_polygon/javascript).
+* `vector.js`, a vector class [from lightgl.js](https://github.com/evanw/lightgl.js).
