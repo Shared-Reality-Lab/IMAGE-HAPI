@@ -1,6 +1,6 @@
 # IMAGE-HAPI
 
-This repository contains both the JS/TS version of the hAPI (Haply's API) 
+This repository contains both the JS/TS version of the [hAPI](https://2diy.haply.co) (Haply's API)
 
 It also contains some examples.
 
