@@ -5,7 +5,7 @@
   "main": "src/hAPI.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI.git"
+    "url": "git+https://github.com/Shared-Reality-Lab/IMAGE-hAPI.git"
   },
   "scripts": {
     "build": "tsc"
@@ -13,9 +13,9 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI/issues"
+    "url": "https://github.com/Shared-Reality-Lab/IMAGE-hAPI/issues"
   },
-  "homepage": "https://github.com/Shared-Reality-Lab/auditory-haptic-graphics-HAPI#readme",
+  "homepage": "https://github.com/Shared-Reality-Lab/IMAGE-hAPI#readme",
   "devDependencies": {
     "@types/chrome": "^0.0.200",
     "@types/w3c-web-serial": "^1.0.3",
